@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from controller import FileController
 
 
@@ -7,18 +7,20 @@ app = FastAPI()
 
 @app.post("/uploadfile/")
 async def upload_file(file: UploadFile = File(...)):
-    _temporal = FileController.get_temp_folder()
+    """
+    Upload a file from Multipart POST request and return imsmanifest.xml file as JSON.
 
-    _filename = _temporal+file.filename
+    :param file: A Multipart Form Data.
+    :return:
+        imsmanifest.xml as JSON if parse was correct, else raise a new HTTPException with Exception code 500.
+    """
+    _filename = FileController.save_file(file=file)
+    FileController.unzip_file(_filename)
+    FileController.delete_temp_file(_filename)
+    # Cambiar el nombre a imsmanifest.xml (Nombre por defecto).
+    ims_manifest = FileController.read_ims_manifest(_filename.replace('.zip', '') + '/imsmanifest_nuevo.xml')
+    ims_manifest = FileController.parse_ims_manifest(ims_manifest)
 
-    with open(_filename, 'wb+') as f:
-        f.write(file.file.read())
-        f.close()
-        FileController.unzip_file(_filename)
-        FileController.delete_temp_file(_filename)
-        # Cambiar el nombre a imsmanifest.xml (Nombre por defecto).
-        ims_manifest = FileController.read_ims_manifest(_filename.replace('.zip', '') + '/imsmanifest_anterior.xml')
-        ims_manifest = FileController.parse_ims_manifest(ims_manifest)
-        print(ims_manifest)
-
-    return {"filename": file.filename}
+    return ims_manifest if ims_manifest is not None else HTTPException(status_code=500,
+                                                                       detail='Error trying to parse the'
+                                                                              ' imsmanifest.xml')
