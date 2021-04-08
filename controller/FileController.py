@@ -100,8 +100,7 @@ def parse_ims_manifest(ims_manifest_data):
     """
     try:
         xml_dict = xmltodict.parse(ims_manifest_data)
-        json_data = json.dumps(xml_dict).replace('\"', '\'')
-        return json_data
+        return json.loads(json.dumps(xml_dict))
     except Exception as e:
         print(e)
         return None
