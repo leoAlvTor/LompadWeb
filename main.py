@@ -1,8 +1,19 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
+from starlette.middleware.cors import CORSMiddleware
+
 from controller import FileController
 
 
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_methods=['*'],
+    allow_headers=['*'],
+    allow_credentials=True,
+)
 
 
 @app.post("/uploadfile/")
