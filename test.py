@@ -1,5 +1,6 @@
 import xmltodict
 from model import LOMModel
+from collections import OrderedDict
 
 
 def get_lines(path):
@@ -17,12 +18,12 @@ leafs = ['lomes:general', 'lomes:lifeCycle', 'lomes:metaMetadata', 'lomes:techni
          'lomes:rights', 'lomes:relation', 'lomes:annotation', 'lomes:classification']
 
 
-def recursive_function(dictionary, profundidad):
+def recursive_function(dictionary):
     for key, value in dictionary.items():
         if isinstance(dictionary[key], dict):
             if key in leafs:
                 LOMModel.determine_lopad_leaf(dictionary[key], key)
-            recursive_function(dictionary[key], profundidad+1)
+            recursive_function(dictionary[key])
 
 
-recursive_function(data_dict, 1)
+recursive_function(data_dict)
