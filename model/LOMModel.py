@@ -331,7 +331,7 @@ def determine_lopad_leaf(dictionary: dict, key):
 
 
 def map_attributes(data: dict, object_instance):
-    if data is not None:
+    if data is not None and not isinstance(data, list):
         attributes = object_instance.__dir__()
         for key, value in data.items():
             attribute_matched = process.extractOne(key.replace('lomes:', ''), attributes, scorer=fuzz.partial_ratio)[0]
@@ -393,11 +393,20 @@ def relation_leaf(data: dict):
 
 
 def annotation_leaf(data: dict):
+    annotation_object = map_attributes(data, LOM.Annotation())
+    print('Annotation: ', annotation_object.__dict__())
     # print('Hello from annotation: ', data)
     ...
 
 
 def classification_leaf(data: dict):
+    classification_object = map_attributes(data, LOM.Classification())
+    taxon_path_object = map_attributes(data.get('lomes:taxonPath'), LOM.Classification.TaxonPath())
+    taxon_object = map_attributes(data.get('lomes:taxonPath')[0].get('taxon'), LOM.Classification.TaxonPath.Taxon())
+    taxon_path_object.taxon = taxon_object
+    classification_object.taxon_path = taxon_path_object
+    print('Classification:', classification_object.__dict__())
+
     # print('Hello from classification: ', data)
     ...
 
