@@ -360,11 +360,15 @@ def meta_metadata_leaf(data: dict):
 
 
 def technical_leaf(data: dict):
+    # technical_object = map_attributes(data, LOM.Technical())
+    # or_composite = map_attributes(data[''])
     # print('Hello from technical: ', data)
     ...
 
 
 def educational_leaf(data: dict):
+    educational_object = map_attributes(data, LOM.Educational())
+    print('Educational: ', educational_object.__dict__())
     # print('Hello from educational: ', data)
     ...
 
