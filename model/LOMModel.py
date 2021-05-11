@@ -374,11 +374,20 @@ def educational_leaf(data: dict):
 
 
 def rights_leaf(data: dict):
+    rights_object = map_attributes(data, LOM.Rights())
+    print('Rights:', rights_object.__dict__())
     # print('Hello from rights: ', data)
     ...
 
 
 def relation_leaf(data: dict):
+    relation_object = map_attributes(data, LOM.Relation())
+    resource_object = map_attributes(data.get('lomes:resource'), LOM.Relation.Resource())
+    identifier_object = map_attributes(data.get('lomes:resource').get('lomes:identifier'),
+                                       LOM.Relation.Resource.Identifier())
+    relation_object.identifier = identifier_object
+    relation_object = resource_object
+    print('Relation: ', relation_object.__dict__())
     # print('Hello from relation: ', data)
     ...
 
