@@ -1,10 +1,13 @@
 import os
 from zipfile import ZipFile
+from datetime import datetime
 
 import json
 from libraries import xmltodict
 
 # Temporal file storage path
+from model import LOMModel
+
 _temp_files = './temp_files/'
 
 
@@ -23,7 +26,7 @@ def get_temp_folder():
 
 def save_file(file):
     """
-    Save a file in the specified path.
+    Save a file in the specified path using hash values, by this avoid overwrite by users.
 
     param file: The name of the file with its path.
     type: file UploadFile (FastAPI)
@@ -31,11 +34,12 @@ def save_file(file):
     :return: The path of the file created.
     """
     _temporal = get_temp_folder()
-    path = _temporal + file.filename
+    hashed_filename = file.filename + "_" + str(hash(file.filename+datetime.today().strftime('%Y-%m-%d-%H:%M:%S')))
+    path = _temporal + hashed_filename
     with open(path, 'wb+') as f:
         f.write(file.file.read())
         f.close()
-    return path
+    return path, hashed_filename
 
 
 def unzip_file(file_path, extraction_path=os.getcwd()+'/temp_files/'):
@@ -99,11 +103,32 @@ def parse_ims_manifest(ims_manifest_data):
         A valid JSON if parsing process was correct, else None.
     """
     try:
-        xml_dict = xmltodict.parse(ims_manifest_data)
-        return json.loads(json.dumps(xml_dict, indent=4))
+        return xmltodict.parse(ims_manifest_data)
     except Exception as e:
         print(e)
         return None
+
+
+def load_recursive_model(ims_manifest_data):
+    """
+    Load LOMPAD XML file into Python Class
+
+    :param ims_manifest_data:
+    :return:
+    """
+
+    data_dict = xmltodict.parse(ims_manifest_data)
+    leafs = ['lomes:general', 'lomes:lifeCycle', 'lomes:metaMetadata', 'lomes:technical', 'lomes:educational',
+             'lomes:rights', 'lomes:relation', 'lomes:annotation', 'lomes:classification']
+
+    def recursive_function(dictionary):
+        print(dictionary)
+        for key, value in dictionary.items():
+            if isinstance(dictionary[key], dict):
+                if key in leafs:
+                    LOMModel.determine_lopad_leaf(dictionary[key], key)
+                recursive_function(dictionary[key])
+    recursive_function(data_dict)
 
 
 """
