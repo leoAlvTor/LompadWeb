@@ -25,13 +25,13 @@ async def upload_file(file: UploadFile = File(...)):
     :return:
         imsmanifest.xml as JSON if parse was correct, else raise a new HTTPException with Exception code 500.
     """
-    _filename = FileController.save_file(file=file)
+    _filename, _hashed_filename = FileController.save_file(file=file)
     FileController.unzip_file(_filename)
     FileController.delete_temp_file(_filename)
-    # Cambiar el nombre a imsmanifest.xml (Nombre por defecto).
     ims_manifest = FileController.read_ims_manifest(_filename.replace('.zip', '') + '/imsmanifest_nuevo.xml')
     ims_manifest = FileController.parse_ims_manifest(ims_manifest)
 
-    return ims_manifest if ims_manifest is not None else HTTPException(status_code=500,
+    return {'PERFIL': 'PERFIL TEST', 'HASHED_VALUE': _hashed_filename} if ims_manifest is not None else HTTPException(status_code=500,
                                                                        detail='Error trying to parse the'
                                                                               ' imsmanifest.xml')
+
