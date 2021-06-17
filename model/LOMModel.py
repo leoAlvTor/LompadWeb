@@ -1,5 +1,4 @@
 # from collections.abc import Iterable
-import this
 from fuzzywuzzy import fuzz, process
 
 
@@ -50,7 +49,7 @@ class LOM:
                 return {'Catalog': self.catalog, 'Entry': self.entry}
 
         def __dict__(self):
-            return {'Identifier': self.identifier.__dict__() if self.identifier is not None else None,
+            return {'Identifier': self.identifier.__dict__() if self.identifier is not None else '',
                     'Title': self.title, 'Language': self.language,
                     'Description': self.description, 'Keyword': self.keyword, 'Coverage': self.coverage,
                     'Structure': self.structure, 'Aggregation Level': self.aggregation_level}
@@ -80,7 +79,7 @@ class LOM:
 
         def __dict__(self):
             return {'Version': self.version, 'Status': self.status,
-                    'Contribute': self.contribute.__dict__() if self.contribute is not None else None}
+                    'Contribute': self.contribute.__dict__() if self.contribute is not None else self.Contribute().__dict__()}
 
     class MetaMetadata:
         identifier = None
@@ -119,8 +118,8 @@ class LOM:
                 return {'Role': self.role, 'Entity': self.entity, 'Date': self.date}
 
         def __dict__(self):
-            return {'Identifier': self.identifier.__dict__() if self.identifier is not None else None,
-                    'Contribute': self.contribute.__dict__() if self.contribute is not None else None,
+            return {'Identifier': self.identifier.__dict__() if self.identifier is not None else self.Identifier().__dict__(),
+                    'Contribute': self.contribute.__dict__() if self.contribute is not None else self.Contribute().__dict__(),
                     'Metadata Schema': self.metadata_schema, 'Language': self.language}
 
     class Technical:
@@ -166,11 +165,11 @@ class LOM:
                             'Maximum Version': self.maximum_version}
 
             def __dict__(self):
-                return {'OrComposite': self.or_composite.__dict__() if self.or_composite is not None else None}
+                return {'OrComposite': self.or_composite.__dict__() if self.or_composite is not None else self.OrComposite().__dict__()}
 
         def __dict__(self):
             return {'Format': self.format, 'Size': self.size, 'Location': self.location,
-                    'Requirement': self.requirement, 'Installation Remarks': self.installation_remarks,
+                    'Requirement': self.Requirement().__dict__(), 'Installation Remarks': self.installation_remarks,
                     'Other Platform Requirements': self.other_platform_requirements, 'Duration': self.duration}
 
     class Educational:
@@ -252,11 +251,13 @@ class LOM:
                     return {'Catalog': self.catalog, 'Entry': self.entry}
 
             def __dict__(self):
-                return {'Identifier': self.identifier.__dict__() if self.identifier is not None else None,
+                return {'Identifier': self.identifier.__dict__() if self.identifier is not None
+                else self.Identifier().__dict__(),
                         'Description': self.description}
 
         def __dict__(self):
-            return {'Kind': self.kind, 'Resource': self.resource.__dict__() if self.resource is not None else None}
+            return {'Kind': self.kind, 'Resource': self.resource.__dict__() if self.resource is not None
+            else self.Resource().__dict__()}
 
     class Annotation:
         entity = None
@@ -303,29 +304,30 @@ class LOM:
                     return {'Id': self.taxon_id, 'Entry': self.entry}
 
             def __dict__(self):
-                return {'Source': self.source, 'Taxon': self.taxon.__dict__() if self.taxon is not None else None}
+                return {'Source': self.source, 'Taxon': self.taxon.__dict__() if self.taxon is not None
+                else self.Taxon().__dict__()}
 
         def __dict__(self):
             return {'Purpose': self.purpose, 'Taxon Path': self.taxon_path.__dict__() if self.taxon_path is not None
-                else None, 'Description': self.description, 'Keyword': self.keyword}
+                else self.TaxonPath().__dict__(), 'Description': self.description, 'Keyword': self.keyword}
 
     def __dict__(self):
-        return {'General': self.general.__dict__() if self.general is not None else None,
-                'Life Cycle': self.life_cycle.__dict__() if self.life_cycle is not None else None,
-                'Meta-Metadata': self.meta_metadata.__dict__() if self.meta_metadata is not None else None,
-                'Technical': self.technical.__dict__() if self.technical is not None else None,
-                'Educational': self.educational.__dict__() if self.educational is not None else None,
-                'Rights': self.rights.__dict__() if self.rights is not None else None,
-                'Relation': self.relation.__dict__() if self.relation is not None else None,
-                'Annotation': self.annotation.__dict__() if self.annotation is not None else None,
-                'Classification': self.classification.__dict__() if self.classification is not None else None}
+        return {'General': self.general.__dict__() if self.general is not None else self.General().__dict__(),
+                'Life Cycle': self.life_cycle.__dict__() if self.life_cycle is not None else self.LifeCycle().__dict__(),
+                'Meta-Metadata': self.meta_metadata.__dict__() if self.meta_metadata is not None else self.MetaMetadata().__dict__(),
+                'Technical': self.technical.__dict__() if self.technical is not None else self.Technical().__dict__(),
+                'Educational': self.educational.__dict__() if self.educational is not None else self.Educational().__dict__(),
+                'Rights': self.rights.__dict__() if self.rights is not None else self.Rights().__dict__(),
+                'Relation': self.relation.__dict__() if self.relation is not None else self.Relation().__dict__(),
+                'Annotation': self.annotation.__dict__() if self.annotation is not None else self.Annotation().__dict__(),
+                'Classification': self.classification.__dict__() if self.classification is not None else self.Classification().__dict__()}
 
 
 function_dict = None
 
 
-def determine_lopad_leaf(dictionary: dict, key):
-    metodo = dispatch[key]
+def determine_lopad_leaf(dictionary: dict, llave):
+    metodo = dispatch["".join(filter(lambda key: llave.replace('lomes:','') in key, dispatch.keys()))]
     metodo(dictionary)
     ...
 
@@ -342,13 +344,13 @@ def map_attributes(data: dict, object_instance):
 
 def general_leaf(data: dict):
     general_object = map_attributes(data, LOM.General())
-    general_object.identifier = map_attributes(data.get('lomes:identifier')[0], LOM.General.Identifier())
+    general_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.General.Identifier())
     print(general_object.__dict__())
 
 
 def life_cycle_leaf(data: dict):
     life_cycle_object = map_attributes(data, LOM.LifeCycle())
-    life_cycle_object.contribute = map_attributes(data.get('lomes:contribute')[0], LOM.LifeCycle.Contribute())
+    life_cycle_object.contribute = map_attributes(data.get('lomes:contribute'), LOM.LifeCycle.Contribute())
     print(life_cycle_object.__dict__())
 
 
