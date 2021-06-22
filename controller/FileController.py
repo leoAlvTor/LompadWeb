@@ -24,17 +24,73 @@ def get_temp_folder():
     return _temp_files
 
 
-def save_file(file):
+def get_temp_filefolder(filename: str):
+    """
+    Creates a temporal file folder for extracting the ZIP file.
+
+    :param filename: The name of the file (isn't it obvious)
+    :type filename str
+
+    :return: The name of the temporal folder.
+    """
+    temp_filefolder = f'{filename}'
+    if not os.path.exists(f'{filename}'):
+        os.makedirs(get_temp_folder() + temp_filefolder.replace('.zip', ''))
+    return temp_filefolder
+
+
+def get_file_type(file):
+    """
+    Determines the type of the file to upload.
+
+    :param file: Name of the file.
+    :type file str
+
+    :return:
+        0: If it's a zip.
+        1: If it's a XML.
+        -1: If it isn't a valid file format.
+    """
+    if '.zip' in file:
+        return 0
+    elif '.xml' in file:
+        return 1
+    else:
+        return -1
+
+
+def save_xml(file):
+    """
+    Save a XML file in the specified path using hash values avoiding overwriting.
+
+    :param file: The name of the file with its path.
+    :return: The path of the file created and it's hashed value.
+    """
+    _temporal = get_temp_folder()
+    hashed_filename = str(file.filename).split('.xml')[0] + "_" \
+                      + str(hash(file.filename + datetime.today().strftime('%Y-%m-%d-%H:%M:%S'))) \
+                      + '.xml'
+    path = _temporal + hashed_filename
+    print(path)
+    with open(path, 'wb+') as f:
+        f.write(file.file.read())
+        f.close()
+    return path, hashed_filename
+
+
+def save_zip(file):
     """
     Save a file in the specified path using hash values, by this avoid overwrite by users.
 
     param file: The name of the file with its path.
     type: file UploadFile (FastAPI)
 
-    :return: The path of the file created.
+    :return: The path of the file created and it's hashed value.
     """
     _temporal = get_temp_folder()
-    hashed_filename = file.filename + "_" + str(hash(file.filename+datetime.today().strftime('%Y-%m-%d-%H:%M:%S')))
+    hashed_filename = str(file.filename).split('.zip')[0] + "_" \
+                      + str(hash(file.filename + datetime.today().strftime('%Y-%m-%d-%H:%M:%S'))) \
+                      + '.zip'
     path = _temporal + hashed_filename
     with open(path, 'wb+') as f:
         f.write(file.file.read())
@@ -42,9 +98,9 @@ def save_file(file):
     return path, hashed_filename
 
 
-def unzip_file(file_path, extraction_path=os.getcwd()+'/temp_files/'):
+def unzip_file(file_name, hashed_filename, file_path, extraction_path=os.getcwd() + '/temp_files/'):
     """
-    Uncompress a zip file.
+    Uncompress a zip file inside a folder with the same name.
 
     param file_path: The path of the zip file.
     type file_path str
@@ -55,9 +111,8 @@ def unzip_file(file_path, extraction_path=os.getcwd()+'/temp_files/'):
     :return:
         None
     """
-
     with ZipFile(file_path) as file:
-        file.extractall(extraction_path)
+        file.extractall((extraction_path + get_temp_filefolder(hashed_filename)).replace('.zip', '') + '/')
 
 
 def delete_temp_file(file_path):
@@ -78,7 +133,7 @@ def delete_temp_file(file_path):
         return False
 
 
-def read_ims_manifest(ims_manifest_path):
+def read_manifest(ims_manifest_path):
     """
     Read the ims_manifest XML file by its path.
 
@@ -88,11 +143,15 @@ def read_ims_manifest(ims_manifest_path):
     :return:
         A string representing the whole file.
     """
-    with open(ims_manifest_path) as file:
-        return ''.join(file.readlines())
+    try:
+        with open(ims_manifest_path) as file:
+            return ''.join(file.readlines())
+    except Exception as e:
+        print(e)
+        return -1
 
 
-def parse_ims_manifest(ims_manifest_data):
+def parse_manifest(ims_manifest_data):
     """
     Parse a valid XML string to JSON.
 
