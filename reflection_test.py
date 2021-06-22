@@ -1,7 +1,10 @@
-from model.LOMModel import LOM
+lista = ['hola', 'como', 'estas']
 
+string = 'hola como estas'
 
-def get_lom_dictionary():
-    return LOM().__dict__()
+for lista_value in lista:
+    if lista_value in string:
+        print('Hallo')
 
-
+values = list([val in string for val in lista])
+print(all(values))
