@@ -3,9 +3,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from controller import FileController
 
-
 app = FastAPI()
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,13 +23,45 @@ async def upload_file(file: UploadFile = File(...)):
     :return:
         imsmanifest.xml as JSON if parse was correct, else raise a new HTTPException with Exception code 500.
     """
-    _filename, _hashed_filename = FileController.save_file(file=file)
-    FileController.unzip_file(_filename)
-    FileController.delete_temp_file(_filename)
-    ims_manifest = FileController.read_ims_manifest(_filename.replace('.zip', '') + '/imsmanifest_nuevo.xml')
-    ims_manifest = FileController.parse_ims_manifest(ims_manifest)
+    file_type = FileController.get_file_type(file.filename)
+    _filepath = None
+    _profile = None
+    xml_manifest = None
+    xml_manifest_ims = -1
+    required_tags = ['identifier', 'title', 'language', 'description', 'aggregationLevel', 'metaMetadata',
+                     'metadataSchema']
 
-    return {'PERFIL': 'PERFIL TEST', 'HASHED_VALUE': _hashed_filename} if ims_manifest is not None else HTTPException(status_code=500,
-                                                                       detail='Error trying to parse the'
-                                                                              ' imsmanifest.xml')
+    if file_type == -1:
+        return HTTPException(status_code=500, detail='Error, not a valid file type.')
+    elif file_type == 1:
+        _filepath, _hashed_filename = FileController.save_xml(file)
+        xml_manifest = FileController.read_manifest(_filepath)
+        if '<lom:lom>' in xml_manifest and all(list([val in xml_manifest for val in required_tags])):
+            _profile = 'IMS'
+        elif '<lom:lom>' not in xml_manifest and all(list([val in xml_manifest for val in required_tags])):
+            _profile = 'SCORM'
+    else:
+        _filepath, _hashed_filename = FileController.save_zip(file=file)
+        FileController.unzip_file(file.filename, _hashed_filename, _filepath)
+        FileController.delete_temp_file(_filepath)
 
+        xml_manifest_scorm = FileController.read_manifest(_filepath.replace('.zip', '') + '/imslrm.xml')
+        if xml_manifest_scorm == -1:
+            xml_manifest_ims = FileController.read_manifest(_filepath.replace('.zip', '') + '/imsmanifest.xml')
+
+        if xml_manifest_ims != -1:
+            xml_manifest = xml_manifest_ims
+            _profile = 'IMS'
+        elif xml_manifest_scorm != -1:
+            _profile = 'SCORM'
+            xml_manifest = xml_manifest_scorm
+        else:
+            HTTPException(status_code=500,
+                          detail='Error, the uploaded file does not contain imslrm.xml nor imsmanifest.xml files.')
+
+    xml_manifest = FileController.parse_manifest(xml_manifest)
+
+    return {'PERFIL': _profile, 'HASHED_VALUE': _hashed_filename.replace('.zip', '').replace('.xml', '')} \
+        if xml_manifest is not None else HTTPException(status_code=500,
+                                                       detail='Error trying to parse the'
+                                                              ' imsmanifest.xml')
