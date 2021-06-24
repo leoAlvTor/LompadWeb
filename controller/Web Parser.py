@@ -11,7 +11,7 @@ from collections import OrderedDict
 import xmltodict, json
 import untangle
 
-import reflection_test
+# import reflection_test
 from model import LOMModel
 
 with open('C:\\Users\\torre\\Documents\\contentv3.xml', 'r') as file:
@@ -47,7 +47,7 @@ def read_recursive(content):
 
 
 read_recursive(data)
-lom_dictionary = reflection_test.get_lom_dictionary()
+lom_dictionary = None #reflection_test.get_lom_dictionary()
 
 values = [value for value in values if value != '']
 
