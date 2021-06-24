@@ -7,6 +7,7 @@ from libraries import xmltodict
 
 # Temporal file storage path
 from model import LOMModel
+from controller import LOMController
 
 _temp_files = './temp_files/'
 
@@ -168,26 +169,18 @@ def parse_manifest(ims_manifest_data):
         return None
 
 
-def load_recursive_model(ims_manifest_data):
+def load_recursive_model(manifest):
     """
     Load LOMPAD XML file into Python Class
 
-    :param ims_manifest_data:
-    :return:
+    :param manifest: A valid XML string.
+    :return: None (Under development).
     """
 
-    data_dict = xmltodict.parse(ims_manifest_data)
-    leafs = ['lomes:general', 'lomes:lifeCycle', 'lomes:metaMetadata', 'lomes:technical', 'lomes:educational',
-             'lomes:rights', 'lomes:relation', 'lomes:annotation', 'lomes:classification']
+    lom_controller = LOMController.Controller()
 
-    def recursive_function(dictionary):
-        print(dictionary)
-        for key, value in dictionary.items():
-            if isinstance(dictionary[key], dict):
-                if key in leafs:
-                    LOMModel.determine_lopad_leaf(dictionary[key], key)
-                recursive_function(dictionary[key])
-    recursive_function(data_dict)
+    parsed_dictionary: dict = lom_controller.parse_str_to_dict(manifest)
+    lom_controller.map_recursively(parsed_dictionary)
 
 
 """
