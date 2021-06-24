@@ -59,9 +59,19 @@ async def upload_file(file: UploadFile = File(...)):
             HTTPException(status_code=500,
                           detail='Error, the uploaded file does not contain imslrm.xml nor imsmanifest.xml files.')
 
-    xml_manifest = FileController.parse_manifest(xml_manifest)
-
     return {'PERFIL': _profile, 'HASHED_VALUE': _hashed_filename.replace('.zip', '').replace('.xml', '')} \
         if xml_manifest is not None else HTTPException(status_code=500,
                                                        detail='Error trying to parse the'
                                                               ' imsmanifest.xml')
+
+
+@app.get("/private/read_file/")
+async def read_file(hashed_code: str, profile: str):
+
+    xml_manifest = FileController.read_manifest(f'./temp_files/{hashed_code}/imslrm.xml') if profile == 'SCORM' \
+        else FileController.read_manifest(f'./temp_files/{hashed_code}/imsmanifest.xml')
+
+    if xml_manifest == -1:
+        HTTPException(status_code=500,
+                      detail='Error, file not found or corrupted.')
+    return {'None'}
