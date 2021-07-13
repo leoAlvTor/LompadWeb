@@ -419,22 +419,17 @@ def technical_leaf(data: dict):
     elif 'requirement' in data.keys() and 'orComposite' in data.get('requirement').keys():
         orComposite = map_attributes(data.get('requirement').get('orComposite'), LOM.Technical.Requirement.OrComposite())
     technical_object.requirement = technical_object.Requirement(orComposite)
-    print(technical_object.requirement is None)
-    pprint(technical_object.__dict__())
+    # pprint(technical_object.__dict__())
 
 
 def educational_leaf(data: dict):
     educational_object = map_attributes(data, LOM.Educational())
-    # print('Educational: ', educational_object.__dict__())
-    # print('Hello from educational: ', educational_object.__dict__())
-    ...
+    #pprint(educational_object.__dict__())
 
 
 def rights_leaf(data: dict):
     rights_object = map_attributes(data, LOM.Rights())
-    # print('Rights:', rights_object.__dict__())
-    # print('Hello from rights: ', rights_object.__dict__())
-    ...
+    print('Hello from rights: ', rights_object.__dict__())
 
 
 def relation_leaf(data: dict):
