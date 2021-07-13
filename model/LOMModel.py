@@ -442,7 +442,7 @@ def relation_leaf(data: dict):
 
     relation_object.resource = resource
 
-    print(relation_object.__dict__())
+    # print(relation_object.__dict__())
 
 def annotation_leaf(data: dict):
     annotation_object = map_attributes(data, LOM.Annotation())
@@ -451,15 +451,9 @@ def annotation_leaf(data: dict):
 
 def classification_leaf(data: dict):
     classification_object = map_attributes(data, LOM.Classification())
-    taxon_path_object = map_attributes(data.get('lomes:taxonPath'), LOM.Classification.TaxonPath())
-    # MULTIPLE TAXONS <-- CHECK IT!!
-    taxon_object = map_attributes(data.get('lomes:taxonPath')[0].get('taxon'), LOM.Classification.TaxonPath.Taxon())
-    taxon_path_object.taxon = taxon_object
-    classification_object.taxon_path = taxon_path_object
-    # print('Classification:', classification_object.__dict__())
 
-    # print('Hello from classification: ', classification_object.__dict__())
-    ...
+    print('TAXOOONNN:  ', data['taxonPath'])
+    print(classification_object.__dict__())
 
 
 dispatch = {
