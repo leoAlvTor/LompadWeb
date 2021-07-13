@@ -429,7 +429,7 @@ def educational_leaf(data: dict):
 
 def rights_leaf(data: dict):
     rights_object = map_attributes(data, LOM.Rights())
-    print('Hello from rights: ', rights_object.__dict__())
+    #print('Hello from rights: ', rights_object.__dict__())
 
 
 def relation_leaf(data: dict):
@@ -446,9 +446,7 @@ def relation_leaf(data: dict):
 
 def annotation_leaf(data: dict):
     annotation_object = map_attributes(data, LOM.Annotation())
-    # print('Annotation: ', annotation_object.__dict__())
-    # print('Hello from annotation: ', annotation_object.__dict__())
-    ...
+    pprint(annotation_object.__dict__())
 
 
 def classification_leaf(data: dict):
