@@ -72,7 +72,6 @@ def save_xml(file):
                       + str(hash(file.filename + datetime.today().strftime('%Y-%m-%d-%H:%M:%S'))) \
                       + '.xml'
     path = _temporal + hashed_filename
-    print(path)
     with open(path, 'wb+') as f:
         f.write(file.file.read())
         f.close()
