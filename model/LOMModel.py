@@ -1,4 +1,8 @@
-# from collections.abc import Iterable
+import logging
+import traceback
+from collections import OrderedDict
+from pprint import pprint
+
 from fuzzywuzzy import fuzz, process
 
 
@@ -6,6 +10,7 @@ class LOM:
 
     def __init__(self, general=None, life_cycle=None, meta_metadata=None, technical=None, educational=None, rights=None,
                  relation=None, annotation=None, classification=None):
+        logging.basicConfig(filename='logger.log')
         self.general = general
         self.life_cycle = life_cycle
         self.meta_metadata = meta_metadata
@@ -118,9 +123,10 @@ class LOM:
                 return {'Role': self.role, 'Entity': self.entity, 'Date': self.date}
 
         def __dict__(self):
-            return {'Identifier': self.identifier.__dict__() if self.identifier is not None else self.Identifier().__dict__(),
-                    'Contribute': self.contribute.__dict__() if self.contribute is not None else self.Contribute().__dict__(),
-                    'Metadata Schema': self.metadata_schema, 'Language': self.language}
+            return {
+                'Identifier': self.identifier.__dict__() if self.identifier is not None else self.Identifier().__dict__(),
+                'Contribute': self.contribute.__dict__() if self.contribute is not None else self.Contribute().__dict__(),
+                'Metadata Schema': self.metadata_schema, 'Language': self.language}
 
     class Technical:
         format = None
@@ -132,8 +138,7 @@ class LOM:
         duration = None
 
         def __init__(self, technical_format='', size='', location='', requirement=None, installation_remarks='',
-                     other_platform_requirements='',
-                     duration=''):
+                     other_platform_requirements='', duration=''):
             self.format = technical_format
             self.size = size,
             self.location = location
@@ -165,11 +170,14 @@ class LOM:
                             'Maximum Version': self.maximum_version}
 
             def __dict__(self):
-                return {'OrComposite': self.or_composite.__dict__() if self.or_composite is not None else self.OrComposite().__dict__()}
+                return {
+                    'OrComposite': self.or_composite.__dict__() if self.or_composite is not None
+                    else self.OrComposite().__dict__()}
 
         def __dict__(self):
             return {'Format': self.format, 'Size': self.size, 'Location': self.location,
-                    'Requirement': self.Requirement().__dict__(), 'Installation Remarks': self.installation_remarks,
+                    'Requirement': self.requirement.__dict__() if self.requirement is not None else self.Requirement().__dict__(),
+                    'Installation Remarks': self.installation_remarks,
                     'Other Platform Requirements': self.other_platform_requirements, 'Duration': self.duration}
 
     class Educational:
@@ -295,7 +303,7 @@ class LOM:
             class Taxon:
                 taxon_id = None
                 entry = None
-                
+
                 def __init__(self, taxon_id='', entry=''):
                     self.taxon_id = taxon_id
                     self.entry = entry
@@ -309,7 +317,7 @@ class LOM:
 
         def __dict__(self):
             return {'Purpose': self.purpose, 'Taxon Path': self.taxon_path.__dict__() if self.taxon_path is not None
-                else self.TaxonPath().__dict__(), 'Description': self.description, 'Keyword': self.keyword}
+            else self.TaxonPath().__dict__(), 'Description': self.description, 'Keyword': self.keyword}
 
     def __dict__(self):
         return {'General': self.general.__dict__() if self.general is not None else self.General().__dict__(),
@@ -327,9 +335,22 @@ function_dict = None
 
 
 def determine_lopad_leaf(dictionary: dict, llave):
-    metodo = dispatch["".join(filter(lambda key: llave.replace('lomes:','') in key, dispatch.keys()))]
-    metodo(dictionary)
-    ...
+    try:
+        metodo = dispatch["".join(filter(lambda key: llave.replace('lomes:', '') in key, dispatch.keys()))]
+        metodo(dictionary)
+    except KeyError as ke:
+        logging.error(f' Unexpected key {llave}, ignoring key, error {ke}')
+    except Exception as ex:
+        logging.error(f' Error: {ex}')
+        #print(traceback.format_exc())
+
+
+def get_keywords(object):
+    values = []
+    for value in object:
+        if type(value) is OrderedDict and 'string' in value.keys() and '#text' in value['string'].keys():
+            values.append(value['string']['#text'])
+    return values
 
 
 def map_attributes(data: dict, object_instance):
@@ -338,47 +359,76 @@ def map_attributes(data: dict, object_instance):
         for key, value in data.items():
             attribute_matched = process.extractOne(key.replace('lomes:', ''), attributes, scorer=fuzz.partial_ratio)[0]
             if type(object_instance.__getattribute__(attribute_matched)) is str:
-                object_instance.__setattr__(attribute_matched, value)
+                if type(value) is OrderedDict and '#text' in value.keys():
+                    object_instance.__setattr__(attribute_matched, value['#text'])
+                elif type(value) is OrderedDict and 'string' in value.keys() and '#text' in value['string'].keys():
+                    object_instance.__setattr__(attribute_matched, value['string']['#text'])
+                elif type(value) is list:
+                    object_instance.__setattr__(attribute_matched, get_keywords(value))
+                elif type(value) is OrderedDict and 'value' in value.keys() and '#text' in value['value'].keys():
+                    object_instance.__setattr__(attribute_matched, value['value']['#text'])
+                elif type(value) is OrderedDict and 'dateTime' in value.keys() and '#text' in value['dateTime'].keys():
+                    object_instance.__setattr__(attribute_matched, value['dateTime']['#text'])
+                else:
+                    object_instance.__setattr__(attribute_matched, value)
+
     return object_instance
 
 
 def general_leaf(data: dict):
     general_object = map_attributes(data, LOM.General())
-    general_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.General.Identifier())
-    print(general_object.__dict__())
+    if 'lomes:identifier' in data.keys():
+        general_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.General.Identifier())
+    elif 'identifier' in data.keys():
+        general_object.identifier = map_attributes(data.get('identifier'), LOM.General.Identifier())
+
+    # print('Hello from general: ', general_object.__dict__())
 
 
 def life_cycle_leaf(data: dict):
     life_cycle_object = map_attributes(data, LOM.LifeCycle())
-    life_cycle_object.contribute = map_attributes(data.get('lomes:contribute'), LOM.LifeCycle.Contribute())
-    print(life_cycle_object.__dict__())
+    life_cycle_object.contribute = map_attributes(
+        data.get('lomes:contribute') if data.get('lomes:contribute') is not None
+        else data.get('contribute'),
+        LOM.LifeCycle.Contribute())
+    # print('Hello frm life cycle: ', life_cycle_object.__dict__())
 
 
 def meta_metadata_leaf(data: dict):
     meta_metadata_object = map_attributes(data, LOM.MetaMetadata())
     meta_metadata_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.MetaMetadata.Identifier())
-    meta_metadata_object.contribute = map_attributes(data.get('lomes:contribute'), LOM.MetaMetadata.Contribute())
-    print(meta_metadata_object.__dict__())
+    meta_metadata_object.contribute = map_attributes(data.get('lomes:contribute')
+                                                     if data.get('lomes:contribute') is not None
+                                                     else data.get('contribute'), LOM.MetaMetadata.Contribute())
+
+    # print('Hello from meta-metadata: ', meta_metadata_object.__dict__())
 
 
 def technical_leaf(data: dict):
-    # technical_object = map_attributes(data, LOM.Technical())
-    # or_composite = map_attributes(data[''])
-    # print('Hello from technical: ', data)
-    ...
+    technical_object = map_attributes(data, LOM.Technical())
+    orComposite = None
+    if 'lomes:requirement' in data.keys() and 'lomes:OrComposite' in data.get('lomes:requirement').keys():
+        orComposite = map_attributes(data.get('lomes:requirement').get('lomes:OrComposite'), LOM.Technical.Requirement
+                                     .OrComposite())
+    elif 'requirement' in data.keys() and 'orComposite' in data.get('requirement').keys():
+        orComposite = map_attributes(data.get('requirement').get('orComposite'), LOM.Technical.Requirement.OrComposite())
+    technical_object.requirement = technical_object.Requirement(orComposite)
+    print(technical_object.requirement is None)
+    pprint(technical_object.__dict__())
+
 
 
 def educational_leaf(data: dict):
     educational_object = map_attributes(data, LOM.Educational())
-    print('Educational: ', educational_object.__dict__())
-    # print('Hello from educational: ', data)
+    # print('Educational: ', educational_object.__dict__())
+    # print('Hello from educational: ', educational_object.__dict__())
     ...
 
 
 def rights_leaf(data: dict):
     rights_object = map_attributes(data, LOM.Rights())
-    print('Rights:', rights_object.__dict__())
-    # print('Hello from rights: ', data)
+    # print('Rights:', rights_object.__dict__())
+    # print('Hello from rights: ', rights_object.__dict__())
     ...
 
 
@@ -388,28 +438,29 @@ def relation_leaf(data: dict):
     identifier_object = map_attributes(data.get('lomes:resource').get('lomes:identifier'),
                                        LOM.Relation.Resource.Identifier())
     relation_object.identifier = identifier_object
-    relation_object = resource_object
-    print('Relation: ', relation_object.__dict__())
-    # print('Hello from relation: ', data)
+    # relation_object = resource_object
+    # print('Relation: ', relation_object.__dict__())
+    # print('Hello from relation: ', relation_object.__dict__())
     ...
 
 
 def annotation_leaf(data: dict):
     annotation_object = map_attributes(data, LOM.Annotation())
-    print('Annotation: ', annotation_object.__dict__())
-    # print('Hello from annotation: ', data)
+    # print('Annotation: ', annotation_object.__dict__())
+    # print('Hello from annotation: ', annotation_object.__dict__())
     ...
 
 
 def classification_leaf(data: dict):
     classification_object = map_attributes(data, LOM.Classification())
     taxon_path_object = map_attributes(data.get('lomes:taxonPath'), LOM.Classification.TaxonPath())
+    # MULTIPLE TAXONS <-- CHECK IT!!
     taxon_object = map_attributes(data.get('lomes:taxonPath')[0].get('taxon'), LOM.Classification.TaxonPath.Taxon())
     taxon_path_object.taxon = taxon_object
     classification_object.taxon_path = taxon_path_object
-    print('Classification:', classification_object.__dict__())
+    # print('Classification:', classification_object.__dict__())
 
-    # print('Hello from classification: ', data)
+    # print('Hello from classification: ', classification_object.__dict__())
     ...
 
 
