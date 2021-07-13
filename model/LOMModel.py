@@ -434,19 +434,19 @@ def rights_leaf(data: dict):
 
 def relation_leaf(data: dict):
     relation_object = map_attributes(data, LOM.Relation())
-    resource_object = map_attributes(data.get('lomes:resource'), LOM.Relation.Resource())
-    identifier_object = map_attributes(data.get('lomes:resource').get('lomes:identifier'),
-                                       LOM.Relation.Resource.Identifier())
-    relation_object.identifier = identifier_object
-    # relation_object = resource_object
-    # print('Relation: ', relation_object.__dict__())
-    # print('Hello from relation: ', relation_object.__dict__())
-    ...
 
+    resource = map_attributes(data['resource'], LOM.Relation.Resource())
+    identifier = map_attributes(data['resource']['identifier'], LOM.Relation.Resource.Identifier())
+
+    resource.identifier = identifier
+
+    relation_object.resource = resource
+
+    print(relation_object.__dict__())
 
 def annotation_leaf(data: dict):
     annotation_object = map_attributes(data, LOM.Annotation())
-    pprint(annotation_object.__dict__())
+    #pprint(annotation_object.__dict__())
 
 
 def classification_leaf(data: dict):
