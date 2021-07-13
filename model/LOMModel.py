@@ -369,8 +369,14 @@ def map_attributes(data: dict, object_instance):
                     object_instance.__setattr__(attribute_matched, value['value']['#text'])
                 elif type(value) is OrderedDict and 'dateTime' in value.keys() and '#text' in value['dateTime'].keys():
                     object_instance.__setattr__(attribute_matched, value['dateTime']['#text'])
+                elif type(value) is OrderedDict and 'description' in value.keys() and 'string' in value['description'].keys() and '#text' in value['description']['string']:
+                    object_instance.__setattr__(attribute_matched, value['description']['string']['#text'])
                 else:
                     object_instance.__setattr__(attribute_matched, value)
+
+            if 'otherPlatformRequirements' == key:
+                if 'string' in value.keys() and '#text' in value['string'].keys():
+                    object_instance.__setattr__('other_platform_requirements', value['string']['#text'])
 
     return object_instance
 
@@ -415,7 +421,6 @@ def technical_leaf(data: dict):
     technical_object.requirement = technical_object.Requirement(orComposite)
     print(technical_object.requirement is None)
     pprint(technical_object.__dict__())
-
 
 
 def educational_leaf(data: dict):
