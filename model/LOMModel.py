@@ -414,6 +414,12 @@ def map_attributes(data: dict, object_instance):
 
 
 def general_leaf(data: dict):
+    """
+    Function to map General Leaf.
+
+    :param data: data from manifest.
+    :return: a General class instance.
+    """
     general_object = map_attributes(data, LOM.General())
     if 'lomes:identifier' in data.keys():
         general_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.General.Identifier())
@@ -423,6 +429,12 @@ def general_leaf(data: dict):
 
 
 def life_cycle_leaf(data: dict):
+    """
+        Function to map Life Cycle Leaf.
+
+        :param data: data from manifest.
+        :return: a LifeCycle class instance.
+        """
     life_cycle_object = map_attributes(data, LOM.LifeCycle())
     life_cycle_object.contribute = map_attributes(
         data.get('lomes:contribute') if data.get('lomes:contribute') is not None
@@ -432,6 +444,12 @@ def life_cycle_leaf(data: dict):
 
 
 def meta_metadata_leaf(data: dict):
+    """
+        Function to map Meta MetaData Leaf.
+
+        :param data: data from manifest.
+        :return: a MetaMetaData class instance.
+        """
     meta_metadata_object = map_attributes(data, LOM.MetaMetadata())
     meta_metadata_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.MetaMetadata.Identifier())
     meta_metadata_object.contribute = map_attributes(data.get('lomes:contribute')
@@ -441,6 +459,12 @@ def meta_metadata_leaf(data: dict):
 
 
 def technical_leaf(data: dict):
+    """
+        Function to map Technical Leaf.
+
+        :param data: data from manifest.
+        :return: a Technical class instance.
+        """
     technical_object = map_attributes(data, LOM.Technical())
     orComposite = None
     if 'lomes:requirement' in data.keys() and 'lomes:OrComposite' in data.get('lomes:requirement').keys():
@@ -454,16 +478,34 @@ def technical_leaf(data: dict):
 
 
 def educational_leaf(data: dict):
+    """
+        Function to map Educational Leaf.
+
+        :param data: data from manifest.
+        :return: a Educational class instance.
+        """
     educational_object = map_attributes(data, LOM.Educational())
     return educational_object.__dict__()
 
 
 def rights_leaf(data: dict):
+    """
+        Function to map Rights Leaf.
+
+        :param data: data from manifest.
+        :return: a Rights class instance.
+        """
     rights_object = map_attributes(data, LOM.Rights())
     return rights_object.__dict__()
 
 
 def relation_leaf(data: dict):
+    """
+        Function to map Relation Leaf.
+
+        :param data: data from manifest.
+        :return: a Relation class instance.
+        """
     relation_object = map_attributes(data, LOM.Relation())
     resource = map_attributes(data['resource'], LOM.Relation.Resource())
     identifier = map_attributes(data['resource']['identifier'], LOM.Relation.Resource.Identifier())
@@ -473,11 +515,23 @@ def relation_leaf(data: dict):
 
 
 def annotation_leaf(data: dict):
+    """
+        Function to map Annotation Leaf.
+
+        :param data: data from manifest.
+        :return: a Annotation class instance.
+        """
     annotation_object = map_attributes(data, LOM.Annotation())
     return annotation_object.__dict__()
 
 
 def classification_leaf(data: dict):
+    """
+        Function to map Classification Leaf.
+
+        :param data: data from manifest.
+        :return: a Classification class instance.
+        """
     classification_object = map_attributes(data, LOM.Classification())
     taxon_path = map_attributes(data['taxonPath'], classification_object.TaxonPath())
     taxon = map_attributes(data['taxonPath']['taxon'], classification_object.TaxonPath.Taxon())
@@ -487,6 +541,9 @@ def classification_leaf(data: dict):
     return classification_object.__dict__()
 
 
+"""
+Map which contains LOM standard leaf names and its mapping equivalents.
+"""
 dispatch = {
     'lomes:general': general_leaf, 'lomes:lifeCycle': life_cycle_leaf, 'lomes:metaMetadata': meta_metadata_leaf,
     'lomes:technical': technical_leaf, 'lomes:educational': educational_leaf,
