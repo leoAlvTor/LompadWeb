@@ -75,6 +75,4 @@ async def read_file(hashed_code: str, profile: str):
         raise HTTPException(status_code=500,
                       detail='Error, file not found or corrupted.')
 
-    FileController.load_recursive_model(xml_manifest)
-
-    return {'None'}
+    return {'DATA': FileController.load_recursive_model(xml_manifest)}
