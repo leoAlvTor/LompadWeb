@@ -341,7 +341,12 @@ def determine_lompad_leaf(dictionary: dict, key: str):
     """
     try:
         # Search the key inside dispatch dict.
-        metodo = dispatch["".join(filter(lambda key: key.replace('lomes:', '') in key, dispatch.keys()))]
+        metodo = None
+        for key1 in dispatch.keys():
+            if key in key1:
+                metodo = dispatch[key1]
+
+        print(metodo)
         return metodo(dictionary)
     except KeyError as ke:
         logging.error(f' Unexpected key {key}, ignoring key, error {ke}')
@@ -541,9 +546,6 @@ def classification_leaf(data: dict):
     return classification_object.__dict__()
 
 
-"""
-Map which contains LOM standard leaf names and its mapping equivalents.
-"""
 dispatch = {
     'lomes:general': general_leaf, 'lomes:lifeCycle': life_cycle_leaf, 'lomes:metaMetadata': meta_metadata_leaf,
     'lomes:technical': technical_leaf, 'lomes:educational': educational_leaf,
