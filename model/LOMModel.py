@@ -348,10 +348,16 @@ def determine_lompad_leaf(dictionary: dict, key: str):
         print(traceback.format_exc())
 
 
-def get_keywords(object):
+def get_keywords(object_data: list):
+    """
+    Special case function.
+    The can be many keywords inside general leaf, so this function get its value and stores it inside a list.
 
+    :param object_data: List of OrderedDict.
+    :return: extracted values.
+    """
     values = []
-    for value in object:
+    for value in object_data:
         if type(value) is OrderedDict and 'string' in value.keys() and '#text' in value['string'].keys():
             values.append(value['string']['#text'])
     return values
