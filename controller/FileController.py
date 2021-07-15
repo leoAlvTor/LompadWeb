@@ -168,11 +168,12 @@ def parse_manifest(ims_manifest_data):
         return None
 
 
-def load_recursive_model(manifest):
+def load_recursive_model(manifest, is_lompad_exported=False):
     """
     Load LOMPAD XML file into Python Class
 
     :param manifest: A valid XML string.
+    :param is_lompad_exported: Check if manifest comes from lompad application.
     :return: string (as json) representing mapped values.
     """
 

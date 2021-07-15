@@ -68,6 +68,8 @@ async def upload_file(file: UploadFile = File(...)):
 @app.get("/private/read_file/")
 async def read_file(hashed_code: str, profile: str):
     xml_manifest = None
+    from_lompad = False
+
     if profile == 'SCORM':
         xml_manifest = FileController.read_manifest(f'./temp_files/{hashed_code}/imslrm.xml')
     else:
@@ -75,9 +77,13 @@ async def read_file(hashed_code: str, profile: str):
 
     if xml_manifest == -1:
         xml_manifest = FileController.read_manifest(f'./temp_files/{hashed_code}.xml')
+        from_lompad = True
 
     if xml_manifest == -1:
         raise HTTPException(status_code=500,
                       detail='Error, file not found or corrupted.')
 
-    return {'DATA': FileController.load_recursive_model(xml_manifest)}
+    if not from_lompad:
+        return {'DATA': FileController.load_recursive_model(xml_manifest)}
+    else:
+        return {'DATA': FileController.load_recursive_model(xml_manifest, is_lompad_exported=True)}
