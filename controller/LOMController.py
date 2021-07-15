@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from pprint import pprint
 
 import xmltodict
 from model import LOMModel
@@ -6,9 +7,10 @@ from lxml import etree
 
 
 class Controller():
-
     _leafs = ['lomes:general', 'lomes:lifeCycle', 'lomes:metaMetadata', 'lomes:technical', 'lomes:educational',
-         'lomes:rights', 'lomes:relation', 'lomes:annotation', 'lomes:classification']
+              'lomes:rights', 'lomes:relation', 'lomes:annotation', 'lomes:classification']
+
+    _mapped_data = dict()
 
     def parse_str_to_dict(self, data: str) -> OrderedDict:
         """
@@ -30,6 +32,9 @@ class Controller():
         """
         for key, value in dictionary.items():
             if isinstance(dictionary[key], dict):
-                if any(key in leaf for leaf in self._leafs):
-                    LOMModel.determine_lopad_leaf(dictionary[key], key)
+                if any(key in leaf for leaf in self._leafs) and key != 'lom':
+                    self._mapped_data[key] = LOMModel.determine_lopad_leaf(dictionary[key], key)
                 self.map_recursively(dictionary[key])
+
+    def get_mapped_manifest(self):
+        return self._mapped_data
