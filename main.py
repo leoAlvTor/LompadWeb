@@ -67,9 +67,14 @@ async def upload_file(file: UploadFile = File(...)):
 
 @app.get("/private/read_file/")
 async def read_file(hashed_code: str, profile: str):
+    xml_manifest = None
+    if profile == 'SCORM':
+        xml_manifest = FileController.read_manifest(f'./temp_files/{hashed_code}/imslrm.xml')
+    else:
+        xml_manifest = FileController.read_manifest(f'./temp_files/{hashed_code}/imsmanifest.xml')
 
-    xml_manifest = FileController.read_manifest(f'./temp_files/{hashed_code}/imslrm.xml') if profile == 'SCORM' \
-        else FileController.read_manifest(f'./temp_files/{hashed_code}/imsmanifest.xml')
+    if xml_manifest == -1:
+        xml_manifest = FileController.read_manifest(f'./temp_files/{hashed_code}.xml')
 
     if xml_manifest == -1:
         raise HTTPException(status_code=500,

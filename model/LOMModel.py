@@ -345,8 +345,6 @@ def determine_lompad_leaf(dictionary: dict, key: str):
         for key1 in dispatch.keys():
             if key in key1:
                 metodo = dispatch[key1]
-
-        print(metodo)
         return metodo(dictionary)
     except KeyError as ke:
         logging.error(f' Unexpected key {key}, ignoring key, error {ke}')
