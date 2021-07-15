@@ -329,18 +329,27 @@ class LOM:
                 'Classification': self.classification.__dict__() if self.classification is not None else self.Classification().__dict__()}
 
 
-def determine_lopad_leaf(dictionary: dict, llave):
+def determine_lompad_leaf(dictionary: dict, key: str):
+    """
+    Determine which lompad leaf should be mapped.
+
+    :param dictionary: a Dict instance in representation of data to being parsed.
+    :param key: represents the key of LOM standard.
+    :return: a dict representing the object mapped.
+    """
     try:
-        metodo = dispatch["".join(filter(lambda key: llave.replace('lomes:', '') in key, dispatch.keys()))]
+        # Search the key inside dispatch dict.
+        metodo = dispatch["".join(filter(lambda key: key.replace('lomes:', '') in key, dispatch.keys()))]
         return metodo(dictionary)
     except KeyError as ke:
-        logging.error(f' Unexpected key {llave}, ignoring key, error {ke}')
+        logging.error(f' Unexpected key {key}, ignoring key, error {ke}')
     except Exception as ex:
         logging.error(f' Error: {ex}')
         print(traceback.format_exc())
 
 
 def get_keywords(object):
+
     values = []
     for value in object:
         if type(value) is OrderedDict and 'string' in value.keys() and '#text' in value['string'].keys():
