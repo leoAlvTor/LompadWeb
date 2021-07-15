@@ -336,6 +336,8 @@ def determine_lompad_leaf(dictionary: dict, key: str):
     :param dictionary: a Dict instance in representation of data to being parsed.
     :param key: represents the key of LOM standard.
     :return: a dict representing the object mapped.
+    :except If key was not found or couldn't invoke a function (by reflection) catch an exception and prints its
+    traceback.
     """
     try:
         # Search the key inside dispatch dict.
@@ -364,10 +366,24 @@ def get_keywords(object_data: list):
 
 
 def map_attributes(data: dict, object_instance):
+    """
+    What a nice function, isn't it? (Just kidding).
+
+    Extracts meaningful information from dict nodes and stores inside an object instance, inside nodes can be different
+    types of information:
+    - String
+    - Date (as string)
+
+    There are different ways that ExeLearning saves a string that's the why of too many ifs.
+
+    :param data: An ordered dict which contains the information to be extracted.
+    :param object_instance: An instance of Any LOM leaf class or its subclasses.
+    :return: an object containing parsed information.
+    """
     if data is not None and not isinstance(data, list):
         attributes = object_instance.__dir__()
         for key, value in data.items():
-
+            # Special case to extract data because FuzzyWuzzy can be wrong!
             if 'otherPlatformRequirements' == key:
                 if 'string' in value.keys() and '#text' in value['string'].keys():
                     object_instance.__setattr__('other_platform_requirements', value['string']['#text'])
