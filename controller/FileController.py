@@ -173,13 +173,14 @@ def load_recursive_model(manifest):
     Load LOMPAD XML file into Python Class
 
     :param manifest: A valid XML string.
-    :return: None (Under development).
+    :return: string (as json) representing mapped values.
     """
 
     lom_controller = LOMController.Controller()
 
     parsed_dictionary: dict = lom_controller.parse_str_to_dict(manifest)
     lom_controller.map_recursively(parsed_dictionary)
+    return lom_controller.get_mapped_manifest()
 
 
 """
