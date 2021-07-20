@@ -329,12 +329,14 @@ class LOM:
                 'Classification': self.classification.__dict__() if self.classification is not None else self.Classification().__dict__()}
 
 
-def determine_lompad_leaf(dictionary: dict, key: str):
+def determine_lompad_leaf(dictionary: dict, key: str, is_lompad_exported=False):
     """
     Determine which lompad leaf should be mapped.
 
-    :param dictionary: a Dict instance in representation of data to being parsed.
-    :param key: represents the key of LOM standard.
+    :param dictionary: A Dict instance in representation of data to being parsed.
+    :param key: Represents the key of LOM standard.
+    :param is_lompad_exported: Check if manifest comes from lompad application.
+
     :return: a dict representing the object mapped.
     :except If key was not found or couldn't invoke a function (by reflection) catch an exception and prints its
     traceback.
@@ -345,7 +347,10 @@ def determine_lompad_leaf(dictionary: dict, key: str):
         for key1 in dispatch.keys():
             if key in key1:
                 metodo = dispatch[key1]
-        return metodo(dictionary)
+                print(metodo(dictionary, is_lompad_exported))
+                print('**************************** FINISHED ***************************')
+        if not is_lompad_exported:
+            return metodo(dictionary, is_lompad_exported)
     except KeyError as ke:
         logging.error(f' Unexpected key {key}, ignoring key, error {ke}')
     except Exception as ex:
@@ -365,10 +370,12 @@ def get_keywords(object_data: list):
     for value in object_data:
         if type(value) is OrderedDict and 'string' in value.keys() and '#text' in value['string'].keys():
             values.append(value['string']['#text'])
+        elif type(value) is OrderedDict and '#text' in value.keys():
+            values.append(value['#text'])
     return values
 
 
-def map_attributes(data: dict, object_instance):
+def map_attributes(data: dict, object_instance, is_lom):
     """
     What a nice function, isn't it? (Just kidding).
 
@@ -393,151 +400,166 @@ def map_attributes(data: dict, object_instance):
                     break
 
             attribute_matched = process.extractOne(key.replace('lomes:', ''), attributes, scorer=fuzz.partial_ratio)[0]
-            if type(object_instance.__getattribute__(attribute_matched)) is str:
-                if type(value) is OrderedDict and '#text' in value.keys():
-                    object_instance.__setattr__(attribute_matched, value['#text'])
-                elif type(value) is OrderedDict and 'string' in value.keys() and type(
-                        value['string']) is not OrderedDict:
-                    object_instance.__setattr__(attribute_matched, value['string'])
-                elif type(value) is OrderedDict and 'string' in value.keys() and '#text' in value['string'].keys():
-                    object_instance.__setattr__(attribute_matched, value['string']['#text'])
-                elif type(value) is list:
-                    object_instance.__setattr__(attribute_matched, get_keywords(value))
-                elif type(value) is OrderedDict and 'value' in value.keys() and '#text' in value['value'].keys():
-                    object_instance.__setattr__(attribute_matched, value['value']['#text'])
-                elif type(value) is OrderedDict and 'dateTime' in value.keys() and '#text' in value['dateTime'].keys():
-                    object_instance.__setattr__(attribute_matched, value['dateTime']['#text'])
-                elif type(value) is OrderedDict and 'description' in value.keys() and 'string' in value[
-                    'description'].keys() and '#text' in value['description']['string']:
-                    object_instance.__setattr__(attribute_matched, value['description']['string']['#text'])
-                else:
-                    object_instance.__setattr__(attribute_matched, value)
 
+            if not is_lom:
+                if type(object_instance.__getattribute__(attribute_matched)) is str:
+                    if type(value) is OrderedDict and '#text' in value.keys():
+                        object_instance.__setattr__(attribute_matched, value['#text'])
+                    elif type(value) is OrderedDict and 'string' in value.keys() and type(
+                            value['string']) is not OrderedDict:
+                        object_instance.__setattr__(attribute_matched, value['string'])
+                    elif type(value) is OrderedDict and 'string' in value.keys() and '#text' in value['string'].keys():
+                        object_instance.__setattr__(attribute_matched, value['string']['#text'])
+                    elif type(value) is list:
+                        object_instance.__setattr__(attribute_matched, get_keywords(value))
+                    elif type(value) is OrderedDict and 'value' in value.keys() and '#text' in value['value'].keys():
+                        object_instance.__setattr__(attribute_matched, value['value']['#text'])
+                    elif type(value) is OrderedDict and 'dateTime' in value.keys() and '#text' in value['dateTime'].keys():
+                        object_instance.__setattr__(attribute_matched, value['dateTime']['#text'])
+                    elif type(value) is OrderedDict and 'description' in value.keys() and 'string' in \
+                            value['description'].keys() and '#text' in value['description']['string']:
+                        object_instance.__setattr__(attribute_matched, value['description']['string']['#text'])
+                    else:
+                        object_instance.__setattr__(attribute_matched, value)
+            else:
+                if type(object_instance.__getattribute__(attribute_matched)) is str:
+                    if type(value) is OrderedDict and 'string' in value.keys() and type(value['string']) is list:
+                        object_instance.__setattr__(attribute_matched, get_keywords(value['string']))
+                    elif type(value) is OrderedDict and 'string' in value.keys() and '#text' in value['string'].keys():
+                        object_instance.__setattr__(attribute_matched, value['string']['#text'])
+                    elif type(value) is OrderedDict and 'value' in value.keys():
+                        object_instance.__setattr__(attribute_matched, value['value'])
+                    elif type(value) is OrderedDict and 'dateTime' in value.keys():
+                        object_instance.__setattr__(attribute_matched, value['dateTime'])
+                    elif type(value) is OrderedDict and 'duration' in value.keys():
+                        object_instance.__setattr__(attribute_matched, value['duration'])
+                    else:
+                        object_instance.__setattr__(attribute_matched, value)
     return object_instance
 
 
-def general_leaf(data: dict):
+def general_leaf(data: dict, is_lom):
     """
     Function to map General Leaf.
 
     :param data: data from manifest.
     :return: a General class instance.
     """
-    general_object = map_attributes(data, LOM.General())
+    general_object = map_attributes(data, LOM.General(), is_lom)
     if 'lomes:identifier' in data.keys():
-        general_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.General.Identifier())
+        general_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.General.Identifier(), is_lom)
     elif 'identifier' in data.keys():
-        general_object.identifier = map_attributes(data.get('identifier'), LOM.General.Identifier())
+        general_object.identifier = map_attributes(data.get('identifier'), LOM.General.Identifier(), is_lom)
     return general_object.__dict__()
 
 
-def life_cycle_leaf(data: dict):
+def life_cycle_leaf(data: dict, is_lom):
     """
         Function to map Life Cycle Leaf.
 
         :param data: data from manifest.
         :return: a LifeCycle class instance.
         """
-    life_cycle_object = map_attributes(data, LOM.LifeCycle())
+    life_cycle_object = map_attributes(data, LOM.LifeCycle(), is_lom)
     life_cycle_object.contribute = map_attributes(
         data.get('lomes:contribute') if data.get('lomes:contribute') is not None
         else data.get('contribute'),
-        LOM.LifeCycle.Contribute())
+        LOM.LifeCycle.Contribute(), is_lom)
     return life_cycle_object.__dict__()
 
 
-def meta_metadata_leaf(data: dict):
+def meta_metadata_leaf(data: dict, is_lom):
     """
         Function to map Meta MetaData Leaf.
 
         :param data: data from manifest.
         :return: a MetaMetaData class instance.
         """
-    meta_metadata_object = map_attributes(data, LOM.MetaMetadata())
-    meta_metadata_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.MetaMetadata.Identifier())
+    meta_metadata_object = map_attributes(data, LOM.MetaMetadata(), is_lom)
+    meta_metadata_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.MetaMetadata.Identifier(), is_lom)
     meta_metadata_object.contribute = map_attributes(data.get('lomes:contribute')
                                                      if data.get('lomes:contribute') is not None
-                                                     else data.get('contribute'), LOM.MetaMetadata.Contribute())
+                                                     else data.get('contribute'), LOM.MetaMetadata.Contribute(), is_lom)
     return meta_metadata_object.__dict__()
 
 
-def technical_leaf(data: dict):
+def technical_leaf(data: dict, is_lom):
     """
         Function to map Technical Leaf.
 
         :param data: data from manifest.
         :return: a Technical class instance.
         """
-    technical_object = map_attributes(data, LOM.Technical())
+    technical_object = map_attributes(data, LOM.Technical(), is_lom)
     orComposite = None
     if 'lomes:requirement' in data.keys() and 'lomes:OrComposite' in data.get('lomes:requirement').keys():
         orComposite = map_attributes(data.get('lomes:requirement').get('lomes:OrComposite'), LOM.Technical.Requirement
-                                     .OrComposite())
+                                     .OrComposite(), is_lom)
     elif 'requirement' in data.keys() and 'orComposite' in data.get('requirement').keys():
         orComposite = map_attributes(data.get('requirement').get('orComposite'),
-                                     LOM.Technical.Requirement.OrComposite())
+                                     LOM.Technical.Requirement.OrComposite(), is_lom)
     technical_object.requirement = technical_object.Requirement(orComposite)
     return technical_object.__dict__()
 
 
-def educational_leaf(data: dict):
+def educational_leaf(data: dict, is_lom):
     """
         Function to map Educational Leaf.
 
         :param data: data from manifest.
         :return: a Educational class instance.
         """
-    educational_object = map_attributes(data, LOM.Educational())
+    educational_object = map_attributes(data, LOM.Educational(), is_lom)
     return educational_object.__dict__()
 
 
-def rights_leaf(data: dict):
+def rights_leaf(data: dict, is_lom):
     """
         Function to map Rights Leaf.
 
         :param data: data from manifest.
         :return: a Rights class instance.
         """
-    rights_object = map_attributes(data, LOM.Rights())
+    rights_object = map_attributes(data, LOM.Rights(), is_lom)
     return rights_object.__dict__()
 
 
-def relation_leaf(data: dict):
+def relation_leaf(data: dict, is_lom):
     """
         Function to map Relation Leaf.
 
         :param data: data from manifest.
         :return: a Relation class instance.
         """
-    relation_object = map_attributes(data, LOM.Relation())
-    resource = map_attributes(data['resource'], LOM.Relation.Resource())
-    identifier = map_attributes(data['resource']['identifier'], LOM.Relation.Resource.Identifier())
+    relation_object = map_attributes(data, LOM.Relation(), is_lom)
+    resource = map_attributes(data['resource'], LOM.Relation.Resource(), is_lom)
+    identifier = map_attributes(data['resource']['identifier'], LOM.Relation.Resource.Identifier(), is_lom)
     resource.identifier = identifier
     relation_object.resource = resource
     return relation_object.__dict__()
 
 
-def annotation_leaf(data: dict):
+def annotation_leaf(data: dict, is_lom):
     """
         Function to map Annotation Leaf.
 
         :param data: data from manifest.
         :return: a Annotation class instance.
         """
-    annotation_object = map_attributes(data, LOM.Annotation())
+    annotation_object = map_attributes(data, LOM.Annotation(), is_lom)
     return annotation_object.__dict__()
 
 
-def classification_leaf(data: dict):
+def classification_leaf(data: dict, is_lom):
     """
         Function to map Classification Leaf.
 
         :param data: data from manifest.
         :return: a Classification class instance.
         """
-    classification_object = map_attributes(data, LOM.Classification())
-    taxon_path = map_attributes(data['taxonPath'], classification_object.TaxonPath())
-    taxon = map_attributes(data['taxonPath']['taxon'], classification_object.TaxonPath.Taxon())
+    classification_object = map_attributes(data, LOM.Classification(), is_lom)
+    taxon_path = map_attributes(data['taxonPath'], classification_object.TaxonPath(), is_lom)
+    taxon = map_attributes(data['taxonPath']['taxon'], classification_object.TaxonPath.Taxon(), is_lom)
     classification_object.taxon_path = taxon_path
     classification_object.taxon_path.taxon = taxon
 

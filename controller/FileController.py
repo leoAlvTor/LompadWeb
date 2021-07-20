@@ -179,9 +179,9 @@ def load_recursive_model(manifest, is_lompad_exported=False):
     """
 
     lom_controller = LOMController.Controller()
-
     parsed_dictionary: dict = lom_controller.parse_str_to_dict(manifest)
-    lom_controller.map_recursively(parsed_dictionary)
+
+    lom_controller.map_recursively(parsed_dictionary, is_lompad_exported=is_lompad_exported)
     return lom_controller.get_mapped_manifest()
 
 

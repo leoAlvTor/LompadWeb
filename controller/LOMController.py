@@ -23,18 +23,21 @@ class Controller():
         """
         return xmltodict.parse(data)
 
-    def map_recursively(self, dictionary: dict):
+    def map_recursively(self, dictionary: dict, is_lompad_exported=False):
         """
         Based on an OrderedDict this method map recursively the Dictionary to Python Class.
 
         :param dictionary: A valid Dict or OrderedDict
+        :param is_lompad_exported: Check if manifest comes from lompad application.
+
         :return: None
         """
         for key, value in dictionary.items():
             if isinstance(dictionary[key], dict):
                 if any(key in leaf for leaf in self._leafs) and key != 'lom':
-                    self._mapped_data[key] = LOMModel.determine_lompad_leaf(dictionary[key], str(key))
-                self.map_recursively(dictionary[key])
+                    self._mapped_data[key] = LOMModel.determine_lompad_leaf(dictionary[key], str(key),
+                                                                            is_lompad_exported)
+                self.map_recursively(dictionary[key], is_lompad_exported)
 
     def get_mapped_manifest(self):
         return self._mapped_data
