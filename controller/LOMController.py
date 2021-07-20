@@ -28,7 +28,7 @@ class Controller():
         Based on an OrderedDict this method map recursively the Dictionary to Python Class.
 
         :param dictionary: A valid Dict or OrderedDict
-        :return: None (Under development).
+        :return: None
         """
         for key, value in dictionary.items():
             if isinstance(dictionary[key], dict):
