@@ -7,8 +7,8 @@ from lxml import etree
 
 
 class Controller():
-    _leafs = ['lomes:general', 'lomes:lifeCycle', 'lomes:metaMetadata', 'lomes:technical', 'lomes:educational',
-              'lomes:rights', 'lomes:relation', 'lomes:annotation', 'lomes:classification']
+    _leafs = ['lom:general', 'lom:lifeCycle', 'lom:metaMetadata', 'lom:technical', 'lom:educational',
+              'lom:rights', 'lom:relation', 'lom:annotation', 'lom:classification', 'lom:accessibility']
 
     _mapped_data = dict()
 

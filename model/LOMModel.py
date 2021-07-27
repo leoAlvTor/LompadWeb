@@ -665,14 +665,15 @@ def classification_leaf(data: dict, is_lom):
 
     return classification_object.__dict__()
 
+
 def accessibility_leaf(data: dict, is_lom):
     print('LLEGO A ACCESIBILIDAD...')
     ...
 
 
 dispatch = {
-    'lomes:general': general_leaf, 'lomes:lifeCycle': life_cycle_leaf, 'lomes:metaMetadata': meta_metadata_leaf,
-    'lomes:technical': technical_leaf, 'lomes:educational': educational_leaf,
-    'lomes:rights': rights_leaf, 'lomes:relation': relation_leaf, 'lomes:annotation': annotation_leaf,
-    'lomes:classification': classification_leaf, 'lomes:accessibility': accessibility_leaf
+    'lom:general': general_leaf, 'lom:lifeCycle': life_cycle_leaf, 'lom:metaMetadata': meta_metadata_leaf,
+    'lom:technical': technical_leaf, 'lom:educational': educational_leaf,
+    'lom:rights': rights_leaf, 'lom:relation': relation_leaf, 'lom:annotation': annotation_leaf,
+    'lom:classification': classification_leaf, 'lom:accessibility': accessibility_leaf
 }
