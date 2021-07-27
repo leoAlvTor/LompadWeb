@@ -269,14 +269,22 @@ class LOM:
         entity = None
         date = None
         description = None
+        mode_access = None
+        mode_access_sufficient = None
+        rol = None
 
-        def __init__(self, entity='', date='', description=''):
+        def __init__(self, entity='', date='', description='', mode_access='', mode_access_sufficient='', rol=''):
             self.entity = entity
             self.date = date
             self.description = description
+            self.mode_access = mode_access
+            self.mode_access_sufficient = mode_access_sufficient
+            self.rol = rol
 
         def __dict__(self):
-            return {'Entity': self.entity, 'Date': self.date, 'Description': self.description}
+            return {'Entity': self.entity, 'Date': self.date, 'Description': self.description,
+                    'Mode Access': self.mode_access, 'Mode Access Sufficient': self.mode_access_sufficient,
+                    'Rol': self.rol}
 
     class Classification:
         purpose = None  # purpose
@@ -317,6 +325,70 @@ class LOM:
             return {'Purpose': self.purpose, 'Taxon Path': self.taxon_path.__dict__() if self.taxon_path is not None
             else self.TaxonPath().__dict__(), 'Description': self.description, 'Keyword': self.keyword}
 
+    class Accessibility:
+
+        description = None
+        accessibility_features = None
+        accessibility_hazard = None
+        accessibility_control = None
+        accessibility_api = None
+
+        def __init__(self, description='', accesibility_features='', accessibility_hazard='', accessibility_control='',
+                     accessibility_api=''):
+            self.description = description
+            self.accessibility_features = accesibility_features
+            self.accessibility_hazard = accessibility_hazard
+            self.accessibility_control = accessibility_control
+            self.accessibility_api = accessibility_api
+
+        class AccessibilityFeatures:
+            resource_content = None
+
+            def __init__(self, resource_content=''):
+                self.resource_content = resource_content
+
+            def __dict__(self):
+                return {'Resource Content': self.resource_content}
+
+        class AccessibilityHazard:
+            properties = None
+
+            def __init__(self, properties=''):
+                self.properties = properties
+
+            def __dict__(self):
+                return {'Properties': self.properties}
+
+        class AccessibilityControl:
+            methods = None
+
+            def __init__(self, methods=''):
+                self.methods = methods
+
+            def __dict__(self):
+                return {'Methods': self.methods}
+
+        class AccessibilityAPI:
+            compatible_resource = None
+
+            def __init__(self, compatible_resource=''):
+                self.compatible_resource = compatible_resource
+
+            def __dict__(self):
+                return {'Compatible Resource': self.compatible_resource}
+
+        def __dict__(self):
+            return {'Description': self.description, 'Accessibility Features': self.accessibility_features
+                    if self.accessibility_features is not None else self.AccessibilityFeatures().__dict__(),
+                    'Accessibility Hazard': self.accessibility_hazard if self.accessibility_hazard is not None
+                    else self.AccessibilityHazard().__dict__(),
+                    'Accessibility Control': self.accessibility_control if self.accessibility_control is not None
+                    else self.AccessibilityControl().__dict__(),
+                    'Accessibility API': self.accessibility_api if self.accessibility_api is not None
+                    else self.AccessibilityAPI().__dict__()}
+
+        ...
+
     def __dict__(self):
         return {'General': self.general.__dict__() if self.general is not None else self.General().__dict__(),
                 'Life Cycle': self.life_cycle.__dict__() if self.life_cycle is not None else self.LifeCycle().__dict__(),
@@ -347,10 +419,7 @@ def determine_lompad_leaf(dictionary: dict, key: str, is_lompad_exported=False):
         for key1 in dispatch.keys():
             if key in key1:
                 metodo = dispatch[key1]
-                print(metodo(dictionary, is_lompad_exported))
-                print('**************************** FINISHED ***************************')
-        if not is_lompad_exported:
-            return metodo(dictionary, is_lompad_exported)
+                return metodo(dictionary, is_lompad_exported)
     except KeyError as ke:
         logging.error(f' Unexpected key {key}, ignoring key, error {ke}')
     except Exception as ex:
@@ -393,48 +462,62 @@ def map_attributes(data: dict, object_instance, is_lom):
     if data is not None and not isinstance(data, list):
         attributes = object_instance.__dir__()
         for key, value in data.items():
-            # Special case to extract data because FuzzyWuzzy can be wrong!
+            # Special cases to extract data because FuzzyWuzzy can be wrong!
             if 'otherPlatformRequirements' == key:
                 if 'string' in value.keys() and '#text' in value['string'].keys():
                     object_instance.__setattr__('other_platform_requirements', value['string']['#text'])
-                    break
-
-            attribute_matched = process.extractOne(key.replace('lomes:', ''), attributes, scorer=fuzz.partial_ratio)[0]
-
-            if not is_lom:
-                if type(object_instance.__getattribute__(attribute_matched)) is str:
-                    if type(value) is OrderedDict and '#text' in value.keys():
-                        object_instance.__setattr__(attribute_matched, value['#text'])
-                    elif type(value) is OrderedDict and 'string' in value.keys() and type(
-                            value['string']) is not OrderedDict:
-                        object_instance.__setattr__(attribute_matched, value['string'])
-                    elif type(value) is OrderedDict and 'string' in value.keys() and '#text' in value['string'].keys():
-                        object_instance.__setattr__(attribute_matched, value['string']['#text'])
-                    elif type(value) is list:
-                        object_instance.__setattr__(attribute_matched, get_keywords(value))
-                    elif type(value) is OrderedDict and 'value' in value.keys() and '#text' in value['value'].keys():
-                        object_instance.__setattr__(attribute_matched, value['value']['#text'])
-                    elif type(value) is OrderedDict and 'dateTime' in value.keys() and '#text' in value['dateTime'].keys():
-                        object_instance.__setattr__(attribute_matched, value['dateTime']['#text'])
-                    elif type(value) is OrderedDict and 'description' in value.keys() and 'string' in \
-                            value['description'].keys() and '#text' in value['description']['string']:
-                        object_instance.__setattr__(attribute_matched, value['description']['string']['#text'])
-                    else:
-                        object_instance.__setattr__(attribute_matched, value)
+            elif 'modeaccess' == key:
+                if type(value) is OrderedDict and 'value' in value.keys():
+                    object_instance.__setattr__('mode_access', value['value'])
+            elif 'modeaccesssufficient' == key:
+                if type(value) is OrderedDict and 'value' in value.keys():
+                    object_instance.__setattr__('mode_access_sufficient', value['value'])
+            elif 'rol' == key:
+                if type(value) is OrderedDict and 'value' in value.keys():
+                    object_instance.__setattr__('rol', value['value'])
+            elif 'size' == key and is_lom:
+                object_instance.__setattr__('size', value)
+            elif 'size' == key and not is_lom:
+                object_instance.__setattr__('size', value['#text'])
             else:
-                if type(object_instance.__getattribute__(attribute_matched)) is str:
-                    if type(value) is OrderedDict and 'string' in value.keys() and type(value['string']) is list:
-                        object_instance.__setattr__(attribute_matched, get_keywords(value['string']))
-                    elif type(value) is OrderedDict and 'string' in value.keys() and '#text' in value['string'].keys():
-                        object_instance.__setattr__(attribute_matched, value['string']['#text'])
-                    elif type(value) is OrderedDict and 'value' in value.keys():
-                        object_instance.__setattr__(attribute_matched, value['value'])
-                    elif type(value) is OrderedDict and 'dateTime' in value.keys():
-                        object_instance.__setattr__(attribute_matched, value['dateTime'])
-                    elif type(value) is OrderedDict and 'duration' in value.keys():
-                        object_instance.__setattr__(attribute_matched, value['duration'])
-                    else:
-                        object_instance.__setattr__(attribute_matched, value)
+                attribute_matched = process.extractOne(key.replace('lomes:', ''), attributes, scorer=fuzz.partial_ratio)[0]
+
+                if not is_lom:
+                    if type(object_instance.__getattribute__(attribute_matched)) is str:
+                        if type(value) is OrderedDict and '#text' in value.keys():
+                            object_instance.__setattr__(attribute_matched, value['#text'])
+                        elif type(value) is OrderedDict and 'string' in value.keys() and type(
+                                value['string']) is not OrderedDict:
+                            object_instance.__setattr__(attribute_matched, value['string'])
+                        elif type(value) is OrderedDict and 'string' in value.keys() and '#text' in value['string'].keys():
+                            object_instance.__setattr__(attribute_matched, value['string']['#text'])
+                        elif type(value) is list:
+                            object_instance.__setattr__(attribute_matched, get_keywords(value))
+                        elif type(value) is OrderedDict and 'value' in value.keys() and '#text' in value['value'].keys():
+                            object_instance.__setattr__(attribute_matched, value['value']['#text'])
+                        elif type(value) is OrderedDict and 'dateTime' in value.keys() and '#text' in value[
+                            'dateTime'].keys():
+                            object_instance.__setattr__(attribute_matched, value['dateTime']['#text'])
+                        elif type(value) is OrderedDict and 'description' in value.keys() and 'string' in \
+                                value['description'].keys() and '#text' in value['description']['string']:
+                            object_instance.__setattr__(attribute_matched, value['description']['string']['#text'])
+                        else:
+                            object_instance.__setattr__(attribute_matched, value)
+                else:
+                    if type(object_instance.__getattribute__(attribute_matched)) is str:
+                        if type(value) is OrderedDict and 'string' in value.keys() and type(value['string']) is list:
+                            object_instance.__setattr__(attribute_matched, get_keywords(value['string']))
+                        elif type(value) is OrderedDict and 'string' in value.keys() and type(value['string']) \
+                                is OrderedDict and '#text' in value['string'].keys():
+                            object_instance.__setattr__(attribute_matched, value['string']['#text'])
+                        elif type(value) is OrderedDict and 'value' in value.keys():
+                            object_instance.__setattr__(attribute_matched, value['value'])
+                        elif type(value) is OrderedDict and 'dateTime' in value.keys():
+                            object_instance.__setattr__(attribute_matched, value['dateTime'])
+                        elif type(value) is OrderedDict and 'duration' in value.keys():
+                            object_instance.__setattr__(attribute_matched, value['duration'])
+                        else:
+                            object_instance.__setattr__(attribute_matched, value)
     return object_instance
 
 
@@ -476,7 +559,9 @@ def meta_metadata_leaf(data: dict, is_lom):
         :return: a MetaMetaData class instance.
         """
     meta_metadata_object = map_attributes(data, LOM.MetaMetadata(), is_lom)
-    meta_metadata_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.MetaMetadata.Identifier(), is_lom)
+    meta_metadata_object.identifier = map_attributes(data.get('lomes:identifier') if data.get('lomes:identifier')
+                                                     is not None else data.get('identifier'),
+                                                     LOM.MetaMetadata.Identifier(), is_lom)
     meta_metadata_object.contribute = map_attributes(data.get('lomes:contribute')
                                                      if data.get('lomes:contribute') is not None
                                                      else data.get('contribute'), LOM.MetaMetadata.Contribute(), is_lom)
@@ -558,17 +643,36 @@ def classification_leaf(data: dict, is_lom):
         :return: a Classification class instance.
         """
     classification_object = map_attributes(data, LOM.Classification(), is_lom)
-    taxon_path = map_attributes(data['taxonPath'], classification_object.TaxonPath(), is_lom)
-    taxon = map_attributes(data['taxonPath']['taxon'], classification_object.TaxonPath.Taxon(), is_lom)
+
+    taxon_path = map_attributes(data.get('lomes:taxonPath') if data.get('lomes:taxonPath') is not None else
+                                data.get('taxonPath'), classification_object.TaxonPath(), is_lom)
+
+    if data.get('lomes:taxonPath') is not None and data.get('lomes:taxonPath').get('lomes:taxon') is not None:
+        taxon = map_attributes(data.get('lomes:taxonPath').get('lomes:taxon')[0]
+                               if type(data.get('lomes:taxonPath').get('lomes:taxon')) is list else
+                               data.get('lomes:taxonPath').get('lomes:taxon'), classification_object.TaxonPath.Taxon(),
+                               is_lom)
+        print('-------->',taxon.__dict__())
+    elif data.get('taxonPath') is not None and data.get('taxonPath').get('taxon') is not None:
+        taxon = map_attributes(data.get('taxonPath').get('taxon')[0]
+                               if type(data.get('taxonPath').get('taxon')) is list else
+                               data.get('taxonPath').get('taxon'), classification_object.TaxonPath.Taxon(),
+                               is_lom)
+        print('-->', taxon.__dict__(), data.get('taxonPath').get('taxon'))
+
     classification_object.taxon_path = taxon_path
     classification_object.taxon_path.taxon = taxon
 
     return classification_object.__dict__()
+
+def accessibility_leaf(data: dict, is_lom):
+    print('LLEGO A ACCESIBILIDAD...')
+    ...
 
 
 dispatch = {
     'lomes:general': general_leaf, 'lomes:lifeCycle': life_cycle_leaf, 'lomes:metaMetadata': meta_metadata_leaf,
     'lomes:technical': technical_leaf, 'lomes:educational': educational_leaf,
     'lomes:rights': rights_leaf, 'lomes:relation': relation_leaf, 'lomes:annotation': annotation_leaf,
-    'lomes:classification': classification_leaf
+    'lomes:classification': classification_leaf, 'lomes:accessibility': accessibility_leaf
 }
