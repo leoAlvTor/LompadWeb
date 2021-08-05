@@ -85,6 +85,13 @@ async def read_file(hashed_code: str, profile: str):
                       detail='Error, file not found or corrupted.')
 
     if not from_lompad:
-        return {'DATA': FileController.load_recursive_model(xml_manifest)}
+        return {'DATA': FileController.load_recursive_model(xml_manifest, hashed_code)}
     else:
-        return {'DATA': FileController.load_recursive_model(xml_manifest, is_lompad_exported=True)}
+        return {'DATA': FileController.load_recursive_model(xml_manifest, hashed_code, is_lompad_exported=True)}
+
+
+@app.post("/private/update/")
+async def update_file(hashed_code: str, hoja, data):
+    manifest = FileController.read_manifest(f'./temp_files/{hashed_code}_exported.xml')
+    lom = FileController.load_recursive_as_class(manifest)
+    FileController.update_model(hashed_code, hoja, lom, data)

@@ -1073,3 +1073,18 @@ dispatch = {
     'lom:rights': rights_leaf, 'lom:relation': relation_leaf, 'lom:annotation': annotation_leaf,
     'lom:classification': classification_leaf, 'accesibility': accessibility_leaf
 }
+
+dispatch_update = {
+    'general': general_leaf, 'lifeCycle': life_cycle_leaf, 'metaMetadata': meta_metadata_leaf,
+    'technical': technical_leaf, 'educational': educational_leaf,
+    'rights': rights_leaf, 'relation': relation_leaf, 'annotation': annotation_leaf,
+    'classification': classification_leaf, 'accesibility': accessibility_leaf
+}
+
+
+def update_leaf(leaf, model, data):
+    import json
+    data_as_dict = json.loads(data)
+    metodo = dispatch_update.get(leaf)
+    model.__setattr__(leaf, metodo(data_as_dict, True)[1])
+    return model

@@ -169,7 +169,15 @@ def parse_manifest(ims_manifest_data):
         return None
 
 
-def load_recursive_model(manifest, is_lompad_exported=False):
+def load_recursive_as_class(manifest):
+    lom_controller = LOMController.Controller()
+    parsed_dict = lom_controller.parse_str_to_dict(manifest)
+    lom_controller.map_recursively(parsed_dict, is_lompad_exported=True)
+    lom = lom_controller.get_mapped_class()
+    return lom
+
+
+def load_recursive_model(manifest, hashed_code, is_lompad_exported=False):
     """
     Load LOMPAD XML file into Python Class
 
@@ -182,7 +190,13 @@ def load_recursive_model(manifest, is_lompad_exported=False):
     parsed_dictionary: dict = lom_controller.parse_str_to_dict(manifest)
 
     lom_controller.map_recursively(parsed_dictionary, is_lompad_exported=is_lompad_exported)
-    return lom_controller.get_mapped_manifest()
+    return lom_controller.get_mapped_manifest(hashed_code)
+
+
+def update_model(hashed_code, leaf, model, data):
+    model = LOMModel.update_leaf(leaf, model, data)
+    with open('temp_files/' + hashed_code + '_exported.xml', 'w') as file:
+        file.write(model.to_xml().strip())
 
 
 """
