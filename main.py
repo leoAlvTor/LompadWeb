@@ -2,6 +2,7 @@ import io
 from pprint import pprint
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.openapi.models import Response
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse
 
@@ -98,9 +99,8 @@ async def update_file(hashed_code: str, hoja, data):
     lom = FileController.load_recursive_as_class(manifest)
     FileController.update_model(hashed_code, hoja, lom, data)
 
-@app.post("/private/download/")
+
+@app.get("/private/download/", response_class=FileResponse)
 def get_file(hashed_code):
-    from starlette.responses import StreamingResponse
-    with open(f'./temp_files/{hashed_code}_exported.xml', 'r') as file:
-        lines = ''.join(file.readlines()).strip()
-    return StreamingResponse(io.BytesIO(str.encode(lines)), media_type="text/xml")
+    import aiofiles
+    return FileResponse(f'./temp_files/{hashed_code}_exported.xml')
