@@ -1,6 +1,8 @@
 import logging
 import traceback
 from collections import OrderedDict
+from pprint import pprint
+
 from fuzzywuzzy import fuzz, process
 
 
@@ -795,6 +797,10 @@ def determine_lompad_leaf(dictionary: dict, key: str, is_lompad_exported=False):
         for key1 in dispatch.keys():
             if key in key1:
                 metodo = dispatch[key1]
+                print('****'*10)
+                pprint(metodo(dictionary, is_lompad_exported)[0])
+                print('****' * 10)
+
                 return metodo(dictionary, is_lompad_exported)
     except KeyError as ke:
         logging.error(f' Unexpected key {key}, ignoring key, error {ke}')
@@ -820,7 +826,12 @@ def get_keywords(object_data: list):
     return values
 
 
-def map_attributes(data: dict, object_instance, is_lom):
+def map_attributes(data_original: dict, object_instance, is_lom):
+    data = data_original.copy()
+
+    for key in data_original.keys():
+        data[str(key).replace('lom:', '')] = data.pop(key)
+
     """
     What a nice function, isn't it? (Just kidding).
 
@@ -856,7 +867,7 @@ def map_attributes(data: dict, object_instance, is_lom):
             elif 'size' == key and not is_lom:
                 object_instance.__setattr__('size', value['#text'])
             else:
-                attribute_matched = process.extractOne(key.replace('lomes:', ''), attributes, scorer=fuzz.partial_ratio)[0]
+                attribute_matched = process.extractOne(key.replace('lom:', ''), attributes, scorer=fuzz.partial_ratio)[0]
 
                 if not is_lom:
                     if type(object_instance.__getattribute__(attribute_matched)) is str:
@@ -905,8 +916,8 @@ def general_leaf(data: dict, is_lom):
     :return: a General class instance.
     """
     general_object = map_attributes(data, LOM.General(), is_lom)
-    if 'lomes:identifier' in data.keys():
-        general_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.General.Identifier(), is_lom)
+    if 'lom:identifier' in data.keys():
+        general_object.identifier = map_attributes(data.get('lom:identifier'), LOM.General.Identifier(), is_lom)
     elif 'identifier' in data.keys():
         general_object.identifier = map_attributes(data.get('identifier'), LOM.General.Identifier(), is_lom)
 
@@ -922,7 +933,7 @@ def life_cycle_leaf(data: dict, is_lom):
         """
     life_cycle_object = map_attributes(data, LOM.LifeCycle(), is_lom)
     life_cycle_object.contribute = map_attributes(
-        data.get('lomes:contribute') if data.get('lomes:contribute') is not None
+        data.get('lom:contribute') if data.get('lom:contribute') is not None
         else data.get('contribute'),
         LOM.LifeCycle.Contribute(), is_lom)
     return life_cycle_object.__dict__(), life_cycle_object
@@ -936,11 +947,11 @@ def meta_metadata_leaf(data: dict, is_lom):
         :return: a MetaMetaData class instance.
         """
     meta_metadata_object = map_attributes(data, LOM.MetaMetadata(), is_lom)
-    meta_metadata_object.identifier = map_attributes(data.get('lomes:identifier') if data.get('lomes:identifier')
+    meta_metadata_object.identifier = map_attributes(data.get('lom:identifier') if data.get('lom:identifier')
                                                      is not None else data.get('identifier'),
                                                      LOM.MetaMetadata.Identifier(), is_lom)
-    meta_metadata_object.contribute = map_attributes(data.get('lomes:contribute')
-                                                     if data.get('lomes:contribute') is not None
+    meta_metadata_object.contribute = map_attributes(data.get('lom:contribute')
+                                                     if data.get('lom:contribute') is not None
                                                      else data.get('contribute'), LOM.MetaMetadata.Contribute(), is_lom)
 
     return meta_metadata_object.__dict__(), meta_metadata_object
@@ -955,8 +966,8 @@ def technical_leaf(data: dict, is_lom):
         """
     technical_object = map_attributes(data, LOM.Technical(), is_lom)
     orComposite = None
-    if 'lomes:requirement' in data.keys() and 'lomes:OrComposite' in data.get('lomes:requirement').keys():
-        orComposite = map_attributes(data.get('lomes:requirement').get('lomes:OrComposite'), LOM.Technical.Requirement
+    if 'lom:requirement' in data.keys() and 'lom:OrComposite' in data.get('lom:requirement').keys():
+        orComposite = map_attributes(data.get('lom:requirement').get('lom:OrComposite'), LOM.Technical.Requirement
                                      .OrComposite(), is_lom)
     elif 'requirement' in data.keys() and 'orComposite' in data.get('requirement').keys():
         orComposite = map_attributes(data.get('requirement').get('orComposite'),
@@ -1027,13 +1038,13 @@ def classification_leaf(data: dict, is_lom):
         """
     classification_object = map_attributes(data, LOM.Classification(), is_lom)
 
-    taxon_path = map_attributes(data.get('lomes:taxonPath') if data.get('lomes:taxonPath') is not None else
+    taxon_path = map_attributes(data.get('lom:taxonPath') if data.get('lom:taxonPath') is not None else
                                 data.get('taxonPath'), classification_object.TaxonPath(), is_lom)
 
-    if data.get('lomes:taxonPath') is not None and data.get('lomes:taxonPath').get('lomes:taxon') is not None:
-        taxon = map_attributes(data.get('lomes:taxonPath').get('lomes:taxon')[0]
-                               if type(data.get('lomes:taxonPath').get('lomes:taxon')) is list else
-                               data.get('lomes:taxonPath').get('lomes:taxon'), classification_object.TaxonPath.Taxon(),
+    if data.get('lom:taxonPath') is not None and data.get('lom:taxonPath').get('lom:taxon') is not None:
+        taxon = map_attributes(data.get('lom:taxonPath').get('lom:taxon')[0]
+                               if type(data.get('lom:taxonPath').get('lom:taxon')) is list else
+                               data.get('lom:taxonPath').get('lom:taxon'), classification_object.TaxonPath.Taxon(),
                                is_lom)
 
     elif data.get('taxonPath') is not None and data.get('taxonPath').get('taxon') is not None:
@@ -1085,6 +1096,9 @@ dispatch_update = {
 def update_leaf(leaf, model, data):
     import json
     data_as_dict = json.loads(data)
+
+    print(data_as_dict.keys())
+
     metodo = dispatch_update.get(leaf)
     model.__setattr__(leaf, metodo(data_as_dict, True)[1])
     return model
