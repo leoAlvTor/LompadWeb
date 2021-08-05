@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from starlette.middleware.cors import CORSMiddleware
 
@@ -67,7 +69,6 @@ async def upload_file(file: UploadFile = File(...)):
 
 @app.get("/private/read_file/")
 async def read_file(hashed_code: str, profile: str):
-    xml_manifest = None
     from_lompad = False
 
     if profile == 'SCORM':

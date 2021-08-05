@@ -7,17 +7,18 @@ from fuzzywuzzy import fuzz, process
 class LOM:
 
     def __init__(self, general=None, life_cycle=None, meta_metadata=None, technical=None, educational=None, rights=None,
-                 relation=None, annotation=None, classification=None):
+                 relation=None, annotation=None, classification=None, accessibility=None):
         logging.basicConfig(filename='logger.log')
         self.general = general
-        self.life_cycle = life_cycle
-        self.meta_metadata = meta_metadata
+        self.lifeCycle = life_cycle
+        self.metaMetadata = meta_metadata
         self.technical = technical
         self.educational = educational
         self.rights = rights
         self.relation = relation
         self.annotation = annotation
         self.classification = classification
+        self.accesibility = accessibility
 
     class General:
         identifier = None
@@ -48,13 +49,63 @@ class LOM:
                 self.catalog = catalog
                 self.entry = entry
 
+            def to_xml(self):
+                return f"""<identifier>
+                <catalog>{self.catalog}</catalog>
+                <entry>{self.entry}</entry>
+                </identifier>"""
+
             def __dict__(self):
                 return {'Catalog': self.catalog, 'Entry': self.entry}
+
+        def get_keyword(self):
+            if type(self.keyword) is list:
+                elements = []
+                for element in self.keyword:
+                    elements.append(f'{element},')
+                return elements
+            else:
+                return self.keyword
+
+        def get_xml_keywords(self):
+            if type(self.keyword) is list:
+                content = ""
+                for key in self.keyword:
+                    content += f"""<string language="en">{key}</string>\n"""
+                return content
+            else:
+                return self.keyword
+
+        def to_xml(self):
+            return f"""<general>
+                {self.identifier.to_xml() if self.identifier is not None else ''}
+                <title>
+                <string language="{self.language}">{self.title}</string>
+                </title>
+                <language>{self.language}</language>
+                <description>
+                <string language="{self.language}">{self.description}</string>
+                </description>
+                <keyword>
+                {self.get_xml_keywords()}
+                </keyword>
+                <coverage>
+                <string language="{self.language}">{self.coverage}</string>
+                </coverage>
+                <structure>
+                <source>LOMv1.0</source>
+                <value>{self.structure}</value>
+                </structure>
+                <aggregationLevel>
+                <source>LOMv1.0</source>
+                <value>{self.aggregation_level}</value>
+                </aggregationLevel>
+            </general>"""
 
         def __dict__(self):
             return {'Identifier': self.identifier.__dict__() if self.identifier is not None else '',
                     'Title': self.title, 'Language': self.language,
-                    'Description': self.description, 'Keyword': self.keyword, 'Coverage': self.coverage,
+                    'Description': self.description, 'Keyword': self.get_keyword(), 'Coverage': self.coverage,
                     'Structure': self.structure, 'Aggregation Level': self.aggregation_level}
 
     class LifeCycle:
@@ -80,9 +131,34 @@ class LOM:
             def __dict__(self):
                 return {'Role': self.role, 'Entity': self.entity, 'Date': self.date}
 
+            def to_xml(self):
+                return f"""<contribute>
+                <role>
+                <source>LOMv1.0</source>
+                <value>{self.role}</value>
+                </role>
+                <entity><![CDATA[{self.entity}]]></entity>
+                <date>
+                <dateTime>{self.date}</dateTime>
+                <description>
+                <string language="en">EMPTY</string>
+                </description>
+                </date>
+                </contribute>"""
+
         def __dict__(self):
             return {'Version': self.version, 'Status': self.status,
                     'Contribute': self.contribute.__dict__() if self.contribute is not None else self.Contribute().__dict__()}
+
+        def to_xml(self):
+            return f"""<lifeCycle>
+                <version><string language="en">{self.version}</string></version>
+                <status>
+                <source>LOMv1.0</source>
+                <value>{self.status}</value>
+                </status>
+                {self.contribute.to_xml() if self.contribute is not None else ''}
+            </lifeCycle>"""
 
     class MetaMetadata:
         identifier = None
@@ -98,14 +174,20 @@ class LOM:
 
         class Identifier:
             catalog = None
-            schema = None
+            entry = None
 
-            def __init__(self, catalog='', schema=''):
+            def __init__(self, catalog='', entry=''):
                 self.catalog = catalog
-                self.schema = schema
+                self.entry = entry
+
+            def to_xml(self):
+                return f"""<identifier>
+                <catalog>{self.catalog}</catalog>
+                <entry>{self.entry}</entry>
+                </identifier>"""
 
             def __dict__(self):
-                return {'Catalog': self.catalog, 'Schema': self.schema}
+                return {'Catalog': self.catalog, 'Schema': self.entry}
 
         class Contribute:
             role = None
@@ -117,8 +199,33 @@ class LOM:
                 self.entity = entity
                 self.date = date
 
+            def to_xml(self):
+                return f"""<contribute>
+                <role>
+                <source>LOMv1.0</source>
+                <value>{self.role}</value>
+                </role>
+                <entity>
+                <![CDATA[{self.entity}]]>
+                </entity>
+                <date>
+                <dateTime>{self.date}</dateTime>
+                <description>
+                <string language="en">EMPTY</string>
+                </description>
+                </date>
+                </contribute>"""
+
             def __dict__(self):
                 return {'Role': self.role, 'Entity': self.entity, 'Date': self.date}
+
+        def to_xml(self):
+            return f"""<metaMetadata>
+            {self.identifier.to_xml() if self.identifier is not None else ''}
+            {self.contribute.to_xml() if self.contribute is not None else ''}
+            <metadataSchema>{self.metadata_schema}</metadataSchema>
+            <language>{self.language}</language>
+            </metaMetadata>"""
 
         def __dict__(self):
             return {
@@ -163,14 +270,53 @@ class LOM:
                     self.minimum_version = minimum_version
                     self.maximum_version = maximum_version
 
+                def to_xml(self):
+                    return f"""<orComposite>
+                    <type>
+                    <source>LOMv1.0</source>
+                    <value>{self.composite_type}</value>
+                    </type>
+                    <name>
+                    <source>LOMv1.0></source>
+                    <value>{self.name}</value>
+                    </name>
+                    <minimumVersion>{self.minimum_version}</minimumVersion>
+                    <maximumVersion>{self.maximum_version}</maximumVersion>
+                    </orComposite>"""
+
                 def __dict__(self):
                     return {'Type': self.composite_type, 'Name': self.name, 'Minimum Version': self.minimum_version,
                             'Maximum Version': self.maximum_version}
+
+            def to_xml(self):
+                return f"""<requirement>
+                {self.or_composite.to_xml() if self.or_composite is not None else ''}
+                </requirement>"""
 
             def __dict__(self):
                 return {
                     'OrComposite': self.or_composite.__dict__() if self.or_composite is not None
                     else self.OrComposite().__dict__()}
+
+        def to_xml(self):
+            return f"""<technical>
+            <format>{self.format}</format>
+            <size>{self.size}</size>
+            <location>{self.location}</location>
+            {self.requirement.to_xml() if self.requirement is not None else ''}
+            <installationRemarks>
+            <string language="en">{self.installation_remarks}</string>
+            </installationRemarks>
+            <otherPlatformRequirements>
+            <string language="en">{self.other_platform_requirements}</string>
+            </otherPlatformRequirements>
+            <duration>
+                <duration>{self.duration}</duration>
+                <description>
+                    <string language="">EMPTY</string>
+                </description>
+            </duration>
+            </technical>"""
 
         def __dict__(self):
             return {'Format': self.format, 'Size': self.size, 'Location': self.location,
@@ -206,6 +352,51 @@ class LOM:
             self.description = description
             self.language = language
 
+        def to_xml(self):
+            return f"""<educational>
+            <interactivityType>
+            <source>LOMv1.0</source>
+            <value>{self.interactivity_type}</value>
+            </interactivityType>
+            <learningResourceType>
+            <source>LOMv1.0</source>
+            <value>{self.learning_resource_type}</value>
+            </learningResourceType>
+            <interactivityLevel>
+            <source>LOMv1.0</source>
+            <value>{self.interactivity_level}</value>
+            </interactivityLevel>
+            <semanticDensity>
+            <source>LOMv1.0</source>
+            <value>{self.semantic_density}</value>
+            </semanticDensity>
+            <intendedEndUserRole>
+            <source>LOMv1.0</source>
+            <value>{self.intended_end_user_role}</value>
+            </intendedEndUserRole>
+            <context>
+            <source>LOMv1.0</source>
+            <value>{self.context}</value>
+            </context>
+            <typicalAgeRange>
+            <string language="en">{self.typical_age_range}</string>
+            </typicalAgeRange>
+            <difficulty>
+            <source>LOMv1.0</source>
+            <value>{self.difficulty}</value>
+            </difficulty>
+            <typicalLearningTime>
+            <duration>{self.typical_learning_time}</duration>
+            <description>
+            <string language="en">{self.description}</string>
+            </description>
+            </typicalLearningTime>
+            <description>
+            <string language="en">{self.description}</string>
+            </description>
+            <language>{self.language}</language>
+            </educational>"""
+
         def __dict__(self):
             return {'Interactivity Type': self.interactivity_type,
                     'Learning Resource Type': self.learning_resource_type,
@@ -224,6 +415,21 @@ class LOM:
             self.cost = cost
             self.copyright = copyright_and_other_restrictions
             self.description = description
+
+        def to_xml(self):
+            return f"""<rights>
+            <cost>
+            <source>LOMv1.0</source>
+            <value>{self.cost}</value>
+            </cost>
+            <copyrightAndOtherRestrictions>
+            <source>LOMv1.0</source>
+            <value>{self.copyright}</value>
+            </copyrightAndOtherRestrictions>
+            <description>
+            <string language="en">{self.description}</string>
+            </description>
+            </rights>"""
 
         def __dict__(self):
             return {'Cost': self.cost, 'Copyright and Other Restrictions': self.copyright,
@@ -256,10 +462,33 @@ class LOM:
                 def __dict__(self):
                     return {'Catalog': self.catalog, 'Entry': self.entry}
 
+                def to_xml(self):
+                    return f"""<identifier>
+                    <catalog>{self.catalog}</catalog>
+                    <entry>{self.entry}</entry>
+                    </identifier>"""
+
+            def to_xml(self):
+                return f"""<resource>
+                {self.identifier.to_xml() if self.identifier is not None else ''}
+                <description>
+                <string language="en">{self.description}</string>
+                </description>
+                </resource>"""
+
             def __dict__(self):
                 return {'Identifier': self.identifier.__dict__() if self.identifier is not None
                 else self.Identifier().__dict__(),
                         'Description': self.description}
+
+        def to_xml(self):
+            return f"""<relation>
+            <kind>
+            <source>LOMv1.0</source>
+            <value>{self.kind}</value>
+            </kind>
+            {self.resource.to_xml() if self.resource is not None else ''}
+            </relation>"""
 
         def __dict__(self):
             return {'Kind': self.kind, 'Resource': self.resource.__dict__() if self.resource is not None
@@ -280,6 +509,34 @@ class LOM:
             self.mode_access = mode_access
             self.mode_access_sufficient = mode_access_sufficient
             self.rol = rol
+
+        def to_xml(self):
+            return f"""<annotation>
+            <entity>
+            <![CDATA[{self.entity}]]>
+            </entity>
+            <date>
+            <dateTime>{self.date}</dateTime>
+            <description>
+            <string></string>
+            </description>
+            </date>
+            <description>
+            <string>{self.description}</string>
+            </description>
+            <modeaccess>
+            <source>LOMv1.0</source>
+            <value>{self.mode_access}</value>
+            </modeaccess>
+            <modeaccesssufficient>
+            <source>LOMv1.0</source>
+            <value>{self.mode_access_sufficient}</value>
+            </modeaccesssufficient>
+            <Rol>
+            <source>LOMv1.0</source>
+            <value>{self.rol}</value>
+            </Rol>
+            </annotation>"""
 
         def __dict__(self):
             return {'Entity': self.entity, 'Date': self.date, 'Description': self.description,
@@ -317,9 +574,40 @@ class LOM:
                 def __dict__(self):
                     return {'Id': self.taxon_id, 'Entry': self.entry}
 
+                def to_xml(self):
+                    return f"""<taxon>
+                    <id>{self.taxon_id}</id>
+                    <entry>
+                    <string language="en">{self.entry}</string>
+                    </entry>
+                    </taxon>"""
+
+            def to_xml(self):
+                return f"""<taxonPath>
+                <source>
+                <string language="en">{self.source}</string>
+                </source>
+                {self.taxon.to_xml() if self.taxon is not None else ''}
+                </taxonPath>"""
+
             def __dict__(self):
                 return {'Source': self.source, 'Taxon': self.taxon.__dict__() if self.taxon is not None
                 else self.Taxon().__dict__()}
+
+        def to_xml(self):
+            return f"""<classification>
+            <purpose>
+            <source>LOMv1.0</source>
+            <value>{self.purpose}</value>
+            </purpose>
+            {self.taxon_path.to_xml() if self.taxon_path is not None else ''}
+            <description>
+            <string language="en">{self.description}</string>
+            </description>
+            <keyword>
+            <string language="en">{self.keyword}</string>
+            </keyword>
+            </classification>"""
 
         def __dict__(self):
             return {'Purpose': self.purpose, 'Taxon Path': self.taxon_path.__dict__() if self.taxon_path is not None
@@ -333,8 +621,8 @@ class LOM:
         accessibility_control = None
         accessibility_api = None
 
-        def __init__(self, description='', accesibility_features='', accessibility_hazard='', accessibility_control='',
-                     accessibility_api=''):
+        def __init__(self, description='', accesibility_features=None, accessibility_hazard=None,
+                     accessibility_control=None, accessibility_api=None):
             self.description = description
             self.accessibility_features = accesibility_features
             self.accessibility_hazard = accessibility_hazard
@@ -350,6 +638,22 @@ class LOM:
             def __dict__(self):
                 return {'Resource Content': self.resource_content}
 
+            def get_resource_content(self):
+                content = ""
+                if type(self.resource_content) is OrderedDict and type(self.resource_content.get('br')) is list:
+                    for resource in self.resource_content.get('br'):
+                        content += f"<br>{resource}</br>\n"
+                    return content
+                else:
+                    return self.resource_content.get('br')
+
+            def to_xml(self):
+                return f"""<accessibilityfeatures>
+                <resourcecontent>
+                {self.get_resource_content()}
+                </resourcecontent>
+                </accessibilityfeatures>"""
+
         class AccessibilityHazard:
             properties = None
 
@@ -358,6 +662,22 @@ class LOM:
 
             def __dict__(self):
                 return {'Properties': self.properties}
+
+            def get_properties(self):
+                content = ""
+                if type(self.properties) is OrderedDict and type(self.properties.get('br')) is list:
+                    for resource in self.properties.get('br'):
+                        content += f"<br>{resource}</br>\n"
+                    return content
+                else:
+                    return self.properties.get('br')
+
+            def to_xml(self):
+                return f"""<accessibilityhazard>
+                <properties>
+                {self.get_properties()}
+                </properties>
+                </accessibilityhazard>"""
 
         class AccessibilityControl:
             methods = None
@@ -368,6 +688,22 @@ class LOM:
             def __dict__(self):
                 return {'Methods': self.methods}
 
+            def get_methods(self):
+                content = ""
+                if type(self.methods) is OrderedDict and type(self.methods.get('br')) is list:
+                    for resource in self.methods.get('br'):
+                        content += f"<br>{resource}</br>\n"
+                    return content
+                else:
+                    return self.methods.get('br')
+
+            def to_xml(self):
+                return f"""<accessibilitycontrol>
+                <methods>
+                {self.get_methods()}
+                </methods>
+                </accessibilitycontrol>"""
+
         class AccessibilityAPI:
             compatible_resource = None
 
@@ -377,28 +713,69 @@ class LOM:
             def __dict__(self):
                 return {'Compatible Resource': self.compatible_resource}
 
+            def get_compatible_resources(self):
+                content = ""
+                if type(self.compatible_resource) is OrderedDict and type(self.compatible_resource.get('br')) is list:
+                    for resource in self.compatible_resource.get('br'):
+                        content += f"<br>{resource}</br>\n"
+                    return content
+                else:
+                    return self.compatible_resource.get('br')
+
+            def to_xml(self):
+                return f"""<accessibilityAPI>
+                <compatibleresource>
+                {self.get_compatible_resources()}
+                </compatibleresource>
+                </accessibilityAPI>"""
+
+        def to_xml(self):
+            return f"""<accesibility>
+            <description><string language="en">{self.description}</string></description>
+            {self.accessibility_features.to_xml() if self.accessibility_features is not None else ''}
+            {self.accessibility_hazard.to_xml() if self.accessibility_hazard is not None else ''}
+            {self.accessibility_control.to_xml() if self.accessibility_control is not None else ''}
+            {self.accessibility_api.to_xml() if self.accessibility_api is not None else ''}
+            </accesibility>"""
+
         def __dict__(self):
-            return {'Description': self.description, 'Accessibility Features': self.accessibility_features
+            return {'Description': self.description, 'Accessibility Features': self.accessibility_features.__dict__()
                     if self.accessibility_features is not None else self.AccessibilityFeatures().__dict__(),
-                    'Accessibility Hazard': self.accessibility_hazard if self.accessibility_hazard is not None
+                    'Accessibility Hazard': self.accessibility_hazard.__dict__() if self.accessibility_hazard is not None
                     else self.AccessibilityHazard().__dict__(),
-                    'Accessibility Control': self.accessibility_control if self.accessibility_control is not None
+                    'Accessibility Control': self.accessibility_control.__dict__() if self.accessibility_control is not None
                     else self.AccessibilityControl().__dict__(),
-                    'Accessibility API': self.accessibility_api if self.accessibility_api is not None
+                    'Accessibility API': self.accessibility_api.__dict__() if self.accessibility_api is not None
                     else self.AccessibilityAPI().__dict__()}
 
-        ...
+    def to_xml(self):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lom xmlns="http://ltsc.ieee.org/xsd/LOM" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://ltsc.ieee.org/xsd/LOM http://ltsc.ieee.org/xsd/lomv1.0/lom.xsd">
+            {self.general.to_xml() if self.general is not None else ''}
+            {self.lifeCycle.to_xml() if self.lifeCycle is not None else ''}
+            {self.metaMetadata.to_xml() if self.metaMetadata is not None else ''}
+            {self.technical.to_xml() if self.technical is not None else ''}
+            {self.educational.to_xml() if self.educational is not None else ''}
+            {self.rights.to_xml() if self.rights is not None else ''}
+            {self.relation.to_xml() if self.relation is not None else ''}
+            {self.annotation.to_xml() if self.annotation is not None else ''}
+            {self.classification.to_xml() if self.classification is not None else ''}
+            {self.accesibility.to_xml() if self.accesibility is not None else ''}
+        </lom>
+        """
 
     def __dict__(self):
         return {'General': self.general.__dict__() if self.general is not None else self.General().__dict__(),
-                'Life Cycle': self.life_cycle.__dict__() if self.life_cycle is not None else self.LifeCycle().__dict__(),
-                'Meta-Metadata': self.meta_metadata.__dict__() if self.meta_metadata is not None else self.MetaMetadata().__dict__(),
+                'Life Cycle': self.lifeCycle.__dict__() if self.lifeCycle is not None else self.LifeCycle().__dict__(),
+                'Meta-Metadata': self.metaMetadata.__dict__() if self.metaMetadata is not None else self.MetaMetadata().__dict__(),
                 'Technical': self.technical.__dict__() if self.technical is not None else self.Technical().__dict__(),
                 'Educational': self.educational.__dict__() if self.educational is not None else self.Educational().__dict__(),
                 'Rights': self.rights.__dict__() if self.rights is not None else self.Rights().__dict__(),
                 'Relation': self.relation.__dict__() if self.relation is not None else self.Relation().__dict__(),
                 'Annotation': self.annotation.__dict__() if self.annotation is not None else self.Annotation().__dict__(),
-                'Classification': self.classification.__dict__() if self.classification is not None else self.Classification().__dict__()}
+                'Classification': self.classification.__dict__() if self.classification is not None else self.Classification().__dict__(),
+                'Accessibility': self.accesibility.__dict__() if self.accesibility is not None else self.Accessibility().__dict__()}
 
 
 def determine_lompad_leaf(dictionary: dict, key: str, is_lompad_exported=False):
@@ -415,7 +792,6 @@ def determine_lompad_leaf(dictionary: dict, key: str, is_lompad_exported=False):
     """
     try:
         # Search the key inside dispatch dict.
-        metodo = None
         for key1 in dispatch.keys():
             if key in key1:
                 metodo = dispatch[key1]
@@ -533,7 +909,8 @@ def general_leaf(data: dict, is_lom):
         general_object.identifier = map_attributes(data.get('lomes:identifier'), LOM.General.Identifier(), is_lom)
     elif 'identifier' in data.keys():
         general_object.identifier = map_attributes(data.get('identifier'), LOM.General.Identifier(), is_lom)
-    return general_object.__dict__()
+
+    return general_object.__dict__(), general_object
 
 
 def life_cycle_leaf(data: dict, is_lom):
@@ -548,7 +925,7 @@ def life_cycle_leaf(data: dict, is_lom):
         data.get('lomes:contribute') if data.get('lomes:contribute') is not None
         else data.get('contribute'),
         LOM.LifeCycle.Contribute(), is_lom)
-    return life_cycle_object.__dict__()
+    return life_cycle_object.__dict__(), life_cycle_object
 
 
 def meta_metadata_leaf(data: dict, is_lom):
@@ -565,7 +942,8 @@ def meta_metadata_leaf(data: dict, is_lom):
     meta_metadata_object.contribute = map_attributes(data.get('lomes:contribute')
                                                      if data.get('lomes:contribute') is not None
                                                      else data.get('contribute'), LOM.MetaMetadata.Contribute(), is_lom)
-    return meta_metadata_object.__dict__()
+
+    return meta_metadata_object.__dict__(), meta_metadata_object
 
 
 def technical_leaf(data: dict, is_lom):
@@ -584,7 +962,8 @@ def technical_leaf(data: dict, is_lom):
         orComposite = map_attributes(data.get('requirement').get('orComposite'),
                                      LOM.Technical.Requirement.OrComposite(), is_lom)
     technical_object.requirement = technical_object.Requirement(orComposite)
-    return technical_object.__dict__()
+
+    return technical_object.__dict__(), technical_object
 
 
 def educational_leaf(data: dict, is_lom):
@@ -595,7 +974,8 @@ def educational_leaf(data: dict, is_lom):
         :return: a Educational class instance.
         """
     educational_object = map_attributes(data, LOM.Educational(), is_lom)
-    return educational_object.__dict__()
+
+    return educational_object.__dict__(), educational_object
 
 
 def rights_leaf(data: dict, is_lom):
@@ -606,7 +986,8 @@ def rights_leaf(data: dict, is_lom):
         :return: a Rights class instance.
         """
     rights_object = map_attributes(data, LOM.Rights(), is_lom)
-    return rights_object.__dict__()
+
+    return rights_object.__dict__(), rights_object
 
 
 def relation_leaf(data: dict, is_lom):
@@ -621,7 +1002,8 @@ def relation_leaf(data: dict, is_lom):
     identifier = map_attributes(data['resource']['identifier'], LOM.Relation.Resource.Identifier(), is_lom)
     resource.identifier = identifier
     relation_object.resource = resource
-    return relation_object.__dict__()
+
+    return relation_object.__dict__(), relation_object
 
 
 def annotation_leaf(data: dict, is_lom):
@@ -632,7 +1014,8 @@ def annotation_leaf(data: dict, is_lom):
         :return: a Annotation class instance.
         """
     annotation_object = map_attributes(data, LOM.Annotation(), is_lom)
-    return annotation_object.__dict__()
+
+    return annotation_object.__dict__(), annotation_object
 
 
 def classification_leaf(data: dict, is_lom):
@@ -652,28 +1035,41 @@ def classification_leaf(data: dict, is_lom):
                                if type(data.get('lomes:taxonPath').get('lomes:taxon')) is list else
                                data.get('lomes:taxonPath').get('lomes:taxon'), classification_object.TaxonPath.Taxon(),
                                is_lom)
-        print('-------->',taxon.__dict__())
+
     elif data.get('taxonPath') is not None and data.get('taxonPath').get('taxon') is not None:
         taxon = map_attributes(data.get('taxonPath').get('taxon')[0]
                                if type(data.get('taxonPath').get('taxon')) is list else
                                data.get('taxonPath').get('taxon'), classification_object.TaxonPath.Taxon(),
                                is_lom)
-        print('-->', taxon.__dict__(), data.get('taxonPath').get('taxon'))
 
     classification_object.taxon_path = taxon_path
     classification_object.taxon_path.taxon = taxon
 
-    return classification_object.__dict__()
+    return classification_object.__dict__(), classification_object
 
 
 def accessibility_leaf(data: dict, is_lom):
-    print('LLEGO A ACCESIBILIDAD...')
-    ...
+    accessibility_object = map_attributes(data, LOM.Accessibility(), is_lom)
+    if data.get('accessibilityAPI') is not None:
+        api = map_attributes(data.get('accessibilityAPI'), LOM.Accessibility.AccessibilityAPI(), is_lom)
+    if data.get('accessibilityfeatures') is not None:
+        features = map_attributes(data.get('accessibilityfeatures'), LOM.Accessibility.AccessibilityFeatures(), is_lom)
+    if data.get('accessibilityhazard') is not None:
+        hazard = map_attributes(data.get('accessibilityhazard'), LOM.Accessibility.AccessibilityHazard(), is_lom)
+    if data.get('accessibilitycontrol') is not None:
+        control = map_attributes(data.get('accessibilitycontrol'), LOM.Accessibility.AccessibilityControl(), is_lom)
+
+    accessibility_object.accessibility_api = api
+    accessibility_object.accessibility_features = features
+    accessibility_object.accessibility_hazard = hazard
+    accessibility_object.accessibility_control = control
+
+    return accessibility_object.__dict__(), accessibility_object
 
 
 dispatch = {
     'lom:general': general_leaf, 'lom:lifeCycle': life_cycle_leaf, 'lom:metaMetadata': meta_metadata_leaf,
     'lom:technical': technical_leaf, 'lom:educational': educational_leaf,
     'lom:rights': rights_leaf, 'lom:relation': relation_leaf, 'lom:annotation': annotation_leaf,
-    'lom:classification': classification_leaf, 'lom:accessibility': accessibility_leaf
+    'lom:classification': classification_leaf, 'accesibility': accessibility_leaf
 }
