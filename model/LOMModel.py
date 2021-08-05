@@ -797,10 +797,6 @@ def determine_lompad_leaf(dictionary: dict, key: str, is_lompad_exported=False):
         for key1 in dispatch.keys():
             if key in key1:
                 metodo = dispatch[key1]
-                print('****'*10)
-                pprint(metodo(dictionary, is_lompad_exported)[0])
-                print('****' * 10)
-
                 return metodo(dictionary, is_lompad_exported)
     except KeyError as ke:
         logging.error(f' Unexpected key {key}, ignoring key, error {ke}')
@@ -1096,9 +1092,6 @@ dispatch_update = {
 def update_leaf(leaf, model, data):
     import json
     data_as_dict = json.loads(data)
-
-    print(data_as_dict.keys())
-
     metodo = dispatch_update.get(leaf)
     model.__setattr__(leaf, metodo(data_as_dict, True)[1])
     return model
