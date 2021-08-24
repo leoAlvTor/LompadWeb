@@ -13,6 +13,7 @@ class Controller():
     _mapped_data = dict()
     _object_dict = dict()
 
+
     def parse_str_to_dict(self, data: str) -> OrderedDict:
         """
         Parse a valid xml (string) to Python OrderedDict class (Subclass of Dict class).

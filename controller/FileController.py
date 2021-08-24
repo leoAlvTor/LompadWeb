@@ -1,4 +1,5 @@
 import os
+from os.path import basename
 from pprint import pprint
 from zipfile import ZipFile
 from datetime import datetime
@@ -198,6 +199,22 @@ def update_model(hashed_code, leaf, model, data):
     with open('temp_files/' + hashed_code + '_exported.xml', 'w') as file:
         file.write(model.to_xml().strip())
 
+
+def write_data(data, folder):
+    from os import path
+
+    if path.exists(f'./temp_files/{folder}/imslrm.xml'):
+        with open(f'./temp_files/{folder}/imslrm.xml', 'w') as file:
+            file.write(data)
+    elif path.exists(f'./temp_files/{folder}/imsmanifest.xml'):
+        with open(f'./temp_files/{folder}/imsmanifest.xml', 'w') as file:
+            file.write(data)
+
+    with ZipFile(f'./temp_files/{folder}.zip', 'w') as zipObj:
+        for folderName, subfolders, filenames in os.walk(f'./temp_files/{folder}/'):
+            for filename in filenames:
+                filePath = os.path.join(folderName, filename)
+                zipObj.write(filePath, basename(filePath))
 
 """
     TODO:

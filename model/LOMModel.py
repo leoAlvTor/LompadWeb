@@ -2,7 +2,6 @@ import logging
 import traceback
 from collections import OrderedDict
 from pprint import pprint
-
 from fuzzywuzzy import fuzz, process
 
 
@@ -1037,6 +1036,7 @@ def classification_leaf(data: dict, is_lom):
     taxon_path = map_attributes(data.get('lom:taxonPath') if data.get('lom:taxonPath') is not None else
                                 data.get('taxonPath'), classification_object.TaxonPath(), is_lom)
 
+    taxon = None
     if data.get('lom:taxonPath') is not None and data.get('lom:taxonPath').get('lom:taxon') is not None:
         taxon = map_attributes(data.get('lom:taxonPath').get('lom:taxon')[0]
                                if type(data.get('lom:taxonPath').get('lom:taxon')) is list else
@@ -1093,5 +1093,13 @@ def update_leaf(leaf, model, data):
     import json
     data_as_dict = json.loads(data)
     metodo = dispatch_update.get(leaf)
-    model.__setattr__(leaf, metodo(data_as_dict, True)[1])
+    data = data_as_dict.copy()
+
+    for key in data_as_dict.keys():
+        components = str(key).lower().split(' ')
+        components = components[0] + ''.join(x.title() for x in components[1:])
+        data[components] = data.pop(key)
+
+    model.__setattr__(leaf, metodo(data, True)[1])
+
     return model

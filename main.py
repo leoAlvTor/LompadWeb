@@ -102,5 +102,15 @@ async def update_file(hashed_code: str, hoja, data):
 
 @app.get("/private/download/", response_class=FileResponse)
 def get_file(hashed_code):
+    import glob
+    import os
+
+    paths = glob.glob('./temp_files/*')
+    for path in paths:
+        if hashed_code in path and os.path.isdir(path):
+            FileController.write_data(''.join(open(f'./temp_files/{hashed_code}_exported.xml')).strip(),
+                                      path.replace('./temp_files\\', ''))
+            return FileResponse(f'./temp_files/{hashed_code}.zip', media_type="application/x-zip-compressed")
+
     import aiofiles
     return FileResponse(f'./temp_files/{hashed_code}_exported.xml')
