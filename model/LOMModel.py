@@ -1009,7 +1009,13 @@ def relation_leaf(data: dict, is_lom):
         """
     relation_object = map_attributes(data, LOM.Relation(), is_lom)
     resource = map_attributes(data['resource'], LOM.Relation.Resource(), is_lom)
-    identifier = map_attributes(data['resource']['identifier'], LOM.Relation.Resource.Identifier(), is_lom)
+
+    if 'resource' in data.keys():
+        if 'identifier' in data['resource'].keys():
+            identifier = map_attributes(data['resource']['identifier'], LOM.Relation.Resource.Identifier(), is_lom)
+        elif 'Identifier' in data['resource'].keys():
+            identifier = map_attributes(data['resource']['Identifier'], LOM.Relation.Resource.Identifier(), is_lom)
+
     resource.identifier = identifier
     relation_object.resource = resource
 
