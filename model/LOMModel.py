@@ -780,7 +780,6 @@ class LOM:
 
 
 def determine_lompad_leaf(dictionary: dict, key: str, is_lompad_exported=False):
-    print(f'DICCIONARIO {dictionary}')
     """
     Determine which lompad leaf should be mapped.
 
@@ -970,7 +969,7 @@ def technical_leaf(data: dict, is_lom):
                                      LOM.Technical.Requirement.OrComposite(), is_lom)
     technical_object.requirement = technical_object.Requirement(orComposite)
 
-    return None, None
+    return technical_object.__dict__(), technical_object
 
 
 def educational_leaf(data: dict, is_lom):
