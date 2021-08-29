@@ -1067,19 +1067,38 @@ def classification_leaf(data: dict, is_lom):
 
 def accessibility_leaf(data: dict, is_lom):
     accessibility_object = map_attributes(data, LOM.Accessibility(), is_lom)
+    api, features, hazard, control = None, None, None, None
+
     if data.get('accessibilityAPI') is not None:
         api = map_attributes(data.get('accessibilityAPI'), LOM.Accessibility.AccessibilityAPI(), is_lom)
+    elif data.get('accessibilityApi') is not None:
+        api = map_attributes(data.get('accessibilityApi'), LOM.Accessibility.AccessibilityAPI(), is_lom)
+
     if data.get('accessibilityfeatures') is not None:
         features = map_attributes(data.get('accessibilityfeatures'), LOM.Accessibility.AccessibilityFeatures(), is_lom)
+    elif data.get('accessibilityFeatures') is not None:
+        features = map_attributes(data.get('accessibilityFeatures'), LOM.Accessibility.AccessibilityFeatures(), is_lom)
+
     if data.get('accessibilityhazard') is not None:
         hazard = map_attributes(data.get('accessibilityhazard'), LOM.Accessibility.AccessibilityHazard(), is_lom)
+    elif data.get('accessibilityHazard') is not None:
+        hazard = map_attributes(data.get('accessibilityHazard'), LOM.Accessibility.AccessibilityHazard(), is_lom)
+
     if data.get('accessibilitycontrol') is not None:
         control = map_attributes(data.get('accessibilitycontrol'), LOM.Accessibility.AccessibilityControl(), is_lom)
+    elif data.get('accessibilityControl') is not None:
+        control = map_attributes(data.get('accessibilityControl'), LOM.Accessibility.AccessibilityControl(), is_lom)
+
+
 
     accessibility_object.accessibility_api = api
     accessibility_object.accessibility_features = features
     accessibility_object.accessibility_hazard = hazard
     accessibility_object.accessibility_control = control
+
+    print(data)
+    print('**********************************')
+    print(accessibility_object.__dict__())
 
     return accessibility_object.__dict__(), accessibility_object
 
