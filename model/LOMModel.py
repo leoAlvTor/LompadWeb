@@ -964,8 +964,12 @@ def technical_leaf(data: dict, is_lom):
     if 'lom:requirement' in data.keys() and 'lom:OrComposite' in data.get('lom:requirement').keys():
         orComposite = map_attributes(data.get('lom:requirement').get('lom:OrComposite'), LOM.Technical.Requirement
                                      .OrComposite(), is_lom)
-    elif 'requirement' in data.keys() and 'orComposite' in data.get('requirement').keys():
-        orComposite = map_attributes(data.get('requirement').get('orComposite'),
+    elif 'requirement' in data.keys():
+        if data.get('requirement') is not None and 'orComposite' in data.get('requirement').keys():
+            orComposite = map_attributes(data.get('requirement').get('orComposite'),
+                                     LOM.Technical.Requirement.OrComposite(), is_lom)
+        elif data.get('requirement') is not None and 'OrComposite' in data.get('requirement').keys():
+            orComposite = map_attributes(data.get('requirement').get('OrComposite'),
                                      LOM.Technical.Requirement.OrComposite(), is_lom)
     technical_object.requirement = technical_object.Requirement(orComposite)
 

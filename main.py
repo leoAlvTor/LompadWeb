@@ -99,7 +99,8 @@ async def update_file(hashed_code: str, hoja, data):
     print('PASO 1')
     lom = FileController.load_recursive_as_class(manifest)
     print('PASO 2')
-    FileController.update_model(hashed_code, hoja, lom, data)
+    response = FileController.update_model(hashed_code, hoja, lom, data)
+    return {'DATA': response}
 
 
 @app.get("/private/download/", response_class=FileResponse)

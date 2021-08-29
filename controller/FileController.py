@@ -198,6 +198,7 @@ def update_model(hashed_code, leaf, model, data):
     model = LOMModel.update_leaf(leaf, model, data)
     with open('temp_files/' + hashed_code + '_exported.xml', 'w') as file:
         file.write(model.to_xml().strip())
+    return model.__dict__()
 
 
 def write_data(data, folder):
