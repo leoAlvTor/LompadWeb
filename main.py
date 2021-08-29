@@ -96,7 +96,9 @@ async def read_file(hashed_code: str, profile: str):
 @app.post("/private/update/")
 async def update_file(hashed_code: str, hoja, data):
     manifest = FileController.read_manifest(f'./temp_files/{hashed_code}_exported.xml')
+    print('PASO 1')
     lom = FileController.load_recursive_as_class(manifest)
+    print('PASO 2')
     FileController.update_model(hashed_code, hoja, lom, data)
 
 

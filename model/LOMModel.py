@@ -780,6 +780,7 @@ class LOM:
 
 
 def determine_lompad_leaf(dictionary: dict, key: str, is_lompad_exported=False):
+    print(f'DICCIONARIO {dictionary}')
     """
     Determine which lompad leaf should be mapped.
 
@@ -846,7 +847,7 @@ def map_attributes(data_original: dict, object_instance, is_lom):
         for key, value in data.items():
             # Special cases to extract data because FuzzyWuzzy can be wrong!
             if 'otherPlatformRequirements' == key:
-                if 'string' in value.keys() and '#text' in value['string'].keys():
+                if type(value) is OrderedDict and 'string' in value.keys() and '#text' in value['string'].keys():
                     object_instance.__setattr__('other_platform_requirements', value['string']['#text'])
             elif 'modeaccess' == key:
                 if type(value) is OrderedDict and 'value' in value.keys():
@@ -969,7 +970,7 @@ def technical_leaf(data: dict, is_lom):
                                      LOM.Technical.Requirement.OrComposite(), is_lom)
     technical_object.requirement = technical_object.Requirement(orComposite)
 
-    return technical_object.__dict__(), technical_object
+    return None, None
 
 
 def educational_leaf(data: dict, is_lom):
@@ -1090,6 +1091,7 @@ dispatch_update = {
 
 
 def update_leaf(leaf, model, data):
+    print('UPDATE')
     import json
     data_as_dict = json.loads(data)
     metodo = dispatch_update.get(leaf)

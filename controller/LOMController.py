@@ -6,13 +6,12 @@ from model import LOMModel
 from lxml import etree
 
 
-class Controller():
+class Controller:
     _leafs = ['lom:general', 'lom:lifeCycle', 'lom:metaMetadata', 'lom:technical', 'lom:educational',
               'lom:rights', 'lom:relation', 'lom:annotation', 'lom:classification', 'accesibility']
 
     _mapped_data = dict()
     _object_dict = dict()
-
 
     def parse_str_to_dict(self, data: str) -> OrderedDict:
         """
