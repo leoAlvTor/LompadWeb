@@ -113,7 +113,8 @@ def get_file(hashed_code):
         if hashed_code in path and os.path.isdir(path):
             FileController.write_data(''.join(open(f'./temp_files/{hashed_code}_exported.xml')).strip(),
                                       path.replace('./temp_files\\', ''))
-            return FileResponse(f'./temp_files/{hashed_code}.zip', media_type="application/x-zip-compressed")
+            return FileResponse(path=f'./temp_files/{hashed_code}.zip', filename=f'./temp_files/{hashed_code}.zip')
 
     import aiofiles
-    return FileResponse(f'./temp_files/{hashed_code}_exported.xml')
+    return FileResponse(path=f'./temp_files/{hashed_code}_exported.xml',
+                        filename=f'./temp_files/{hashed_code}_exported.xml')
